@@ -1,0 +1,92 @@
+<!-- select_branch/templates/select_branch/select_branch.html -->
+{% extends 'base.html' %}
+
+{% block title %}Select Branch{% endblock %}
+
+{% block content %}
+<style>
+    .branch-select-container {
+        max-width: 500px;
+        margin: 3rem auto;
+        text-align: center;
+    }
+    
+    .branch-select-container h1 {
+        color: #10b981;
+        margin-bottom: 1rem;
+    }
+    
+    .branch-select-container p {
+        color: #666;
+        margin-bottom: 2rem;
+    }
+    
+    .branch-option {
+        padding: 1rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-align: left;
+    }
+    
+    .branch-option:hover {
+        border-color: #10b981;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .branch-option.selected {
+        border-color: #10b981;
+        background: #f0fdf4;
+    }
+    
+    .branch-option h3 {
+        margin: 0 0 0.5rem 0;
+        color: #333;
+    }
+    
+    .branch-option small {
+        color: #666;
+        display: block;
+    }
+</style>
+
+<div class="branch-select-container">
+    <h1>Welcome!</h1>
+    <p>Please select your branch to continue.</p>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        {% for branch in branches %}
+        <div class="branch-option" onclick="selectBranch({{ branch.id }})">
+            <h3>{{ branch.name }}</h3>
+            <small>{{ branch.address|default:"No address provided" }}</small>
+        </div>
+        {% endfor %}
+        
+        <input type="hidden" id="selectedBranch" name="branch_id" value="">
+        
+        <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 1rem; padding: 1rem;" id="submitBtn">
+            Continue
+        </button>
+    </form>
+</div>
+
+<script>
+function selectBranch(branchId) {
+    document.getElementById('selectedBranch').value = branchId;
+    
+    document.querySelectorAll('.branch-option').forEach(option => {
+        option.classList.remove('selected');
+    });
+    
+    const selectedOption = document.querySelector(`.branch-option:nth-child(${branchId})`);
+    if (selectedOption) {
+        selectedOption.classList.add('selected');
+    }
+}
+</script>
+{% endblock %}

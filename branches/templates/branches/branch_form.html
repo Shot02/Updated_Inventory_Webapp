@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ action }} Branch{% endblock %}
+
+{% block content %}
+<style>
+    .form-container {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+    
+    .company-name-display {
+        background: #f0fdf4;
+        padding: 1rem;
+        border-radius: 8px;
+        border: 2px solid #10b981;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+    
+    .company-name-display h3 {
+        color: #10b981;
+        margin: 0;
+        font-size: 1.2rem;
+    }
+    
+    .company-name-display small {
+        color: #666;
+        display: block;
+        margin-top: 0.3rem;
+    }
+    
+    .optional-label {
+        color: #999;
+        font-size: 0.85rem;
+        font-weight: normal;
+    }
+</style>
+
+<div class="form-container">
+    <h1 style="margin-bottom: 2rem; color: #10b981;">{{ action }} Branch</h1>
+    
+    <div class="company-name-display">
+        <h3>🏢 WADRASH NIG. LIMITED</h3>
+        <small>All branches operate under this company</small>
+    </div>
+    
+    <div class="card">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="name">Branch Name/Location <span style="color: #dc3545;">*</span></label>
+                <input type="text" id="name" name="name" class="form-control" 
+                       value="{{ branch.name|default:'' }}" required
+                       placeholder="e.g., Lagos Branch, Ibadan Branch, Abuja Branch">
+                <small style="color: #666;">Enter the branch location name</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="code">Branch Code <span style="color: #dc3545;">*</span></label>
+                <input type="text" id="code" name="code" class="form-control" 
+                       value="{{ branch.code|default:'' }}" required
+                       placeholder="e.g., LAG, IBA, ABJ"
+                       style="text-transform: uppercase;">
+                <small style="color: #666;">Unique short code for this branch (2-5 characters)</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="address">Branch Address <span class="optional-label">(optional)</span></label>
+                <textarea id="address" name="address" class="form-control" rows="2" 
+                          placeholder="Enter branch address (optional)">{{ branch.address|default:'' }}</textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="phone">Contact Phone <span class="optional-label">(optional)</span></label>
+                <input type="tel" id="phone" name="phone" class="form-control" 
+                       value="{{ branch.phone|default:'' }}"
+                       placeholder="Enter branch phone number (optional)">
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Contact Email <span class="optional-label">(optional)</span></label>
+                <input type="email" id="email" name="email" class="form-control" 
+                       value="{{ branch.email|default:'' }}"
+                       placeholder="Enter branch email address (optional)">
+            </div>
+            
+            <div class="form-group">
+                <label for="manager">Branch Manager <span class="optional-label">(optional)</span></label>
+                <input type="text" id="manager" name="manager" class="form-control" 
+                       value="{{ branch.manager|default:'' }}"
+                       placeholder="Enter branch manager name (optional)">
+            </div>
+            
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="checkbox" id="is_active" name="is_active" value="1" 
+                           {% if branch.is_active or not branch %}checked{% endif %}>
+                    <span>Branch is Active</span>
+                </label>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-success" style="flex: 1;">{{ action }} Branch</button>
+                <a href="{% url 'branch_list' %}" class="btn btn-danger">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const codeInput = document.getElementById('code');
+    if (codeInput) {
+        codeInput.addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+        });
+    }
+    
+    const nameInput = document.getElementById('name');
+    if (nameInput) {
+        nameInput.focus();
+    }
+});
+</script>
+{% endblock %}

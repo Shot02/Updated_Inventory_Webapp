@@ -1,0 +1,365 @@
+<!-- customers/templates/customers/customer_form.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ action }} Customer{% endblock %}
+
+{% block content %}
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+    
+    .form-section {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        margin-bottom: 1.5rem;
+        border-left: 4px solid #10b981;
+    }
+    
+    .form-section h3 {
+        color: #10b981;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #f0f0f0;
+        font-size: 1.1rem;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+    
+    .form-actions .btn {
+        flex: 1;
+    }
+    
+    .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        font-weight: 500;
+    }
+    
+    .checkbox-label input {
+        width: auto;
+    }
+    
+    .purchase-summary {
+        background: #f0fdf4;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        border: 1px solid #10b981;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+    }
+    
+    .summary-item {
+        text-align: center;
+    }
+    
+    .summary-item .label {
+        font-size: 0.75rem;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .summary-item .value {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #10b981;
+    }
+    
+    @media (max-width: 768px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .form-container {
+            padding: 0 10px;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<div class="form-container">
+    <h1 style="color: #dc2626; margin-bottom: 1.5rem;">{{ action }} Customer</h1>
+    
+    {% if customer and customer.id %}
+    <!-- Customer Summary (only show when editing existing customer) -->
+    <div class="purchase-summary">
+        <div class="summary-item">
+            <div class="label">Total Purchases</div>
+            <div class="value">₦{{ customer.total_purchases|floatformat:2 }}</div>
+        </div>
+        <div class="summary-item">
+            <div class="label">Loyalty Points</div>
+            <div class="value">{{ customer.loyalty_points }}</div>
+        </div>
+        <div class="summary-item">
+            <div class="label">Last Purchase</div>
+            <div class="value">
+                {% if customer.last_purchase_date %}
+                    {{ customer.last_purchase_date|date:"M d, Y" }}
+                {% else %}
+                    Never
+                {% endif %}
+            </div>
+        </div>
+        <div class="summary-item">
+            <div class="label">Customer Since</div>
+            <div class="value">{{ customer.created_at|date:"M d, Y" }}</div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <form method="post" id="customerForm">
+        {% csrf_token %}
+        
+        <!-- Basic Information -->
+        <div class="form-section">
+            <h3>Basic Information</h3>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="customerName">Customer Name *</label>
+                    <input type="text" id="customerName" name="name" class="form-control" 
+                           value="{{ customer.name|default:'' }}" required
+                           placeholder="Enter customer full name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="customerPhone">Phone Number *</label>
+                    <input type="tel" id="customerPhone" name="phone" class="form-control" 
+                           value="{{ customer.phone|default:'' }}" required
+                           placeholder="Enter phone number">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="customerEmail">Email Address</label>
+                <input type="email" id="customerEmail" name="email" class="form-control" 
+                       value="{{ customer.email|default:'' }}"
+                       placeholder="Enter email address (optional)">
+            </div>
+            
+            <div class="form-group">
+                <label for="customerAddress">Address</label>
+                <textarea id="customerAddress" name="address" class="form-control" rows="2" 
+                          placeholder="Enter customer address (optional)">{{ customer.address|default:'' }}</textarea>
+            </div>
+        </div>
+        
+        <!-- Customer Type & Status -->
+        <div class="form-section">
+            <h3>Customer Classification</h3>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="customerType">Customer Type *</label>
+                    <select id="customerType" name="customer_type" class="form-control" required>
+                        <option value="regular" {% if customer.customer_type == 'regular' %}selected{% endif %}>Regular</option>
+                        <option value="vip" {% if customer.customer_type == 'vip' %}selected{% endif %}>VIP</option>
+                        <option value="wholesale" {% if customer.customer_type == 'wholesale' %}selected{% endif %}>Wholesale</option>
+                    </select>
+                    <small style="color: #666; display: block; margin-top: 0.3rem;">
+                        <strong>Regular:</strong> Standard customer | 
+                        <strong>VIP:</strong> Premium customer | 
+                        <strong>Wholesale:</strong> Bulk buyer
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="customerStatus">Account Status</label>
+                    <div style="margin-top: 0.5rem;">
+                        <label class="checkbox-label" style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" id="customerStatus" name="is_active" value="1" 
+                                   {% if customer.is_active or not customer %}checked{% endif %}>
+                            <span>Active Account</span>
+                        </label>
+                        <small style="color: #666; display: block; margin-top: 0.3rem;">
+                            Inactive customers won't appear in POS search
+                        </small>
+                    </div>
+                </div>
+            </div>
+            
+            {% if customer and customer.id %}
+            <div class="form-grid" style="margin-top: 1rem;">
+                <div class="form-group">
+                    <label>Loyalty Points (Read-only)</label>
+                    <input type="number" class="form-control" value="{{ customer.loyalty_points }}" readonly 
+                           style="background: #f8f9fa; color: #666;">
+                </div>
+                
+                <div class="form-group">
+                    <label>Total Purchases (Read-only)</label>
+                    <input type="text" class="form-control" value="₦{{ customer.total_purchases|floatformat:2 }}" readonly 
+                           style="background: #f8f9fa; color: #666;">
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Notes -->
+        <div class="form-section">
+            <h3>Additional Notes</h3>
+            
+            <div class="form-group">
+                <label for="customerNotes">Notes</label>
+                <textarea id="customerNotes" name="notes" class="form-control" rows="3" 
+                          placeholder="Any special notes about this customer (optional)">{{ customer.notes|default:'' }}</textarea>
+            </div>
+        </div>
+        
+        <!-- Form Actions -->
+        <div class="form-actions">
+            <button type="submit" class="btn btn-success" id="submitBtn" style="background: #10b981;">
+                {{ action }} Customer
+            </button>
+            <a href="{% url 'customer_list' %}" class="btn btn-danger" style="text-align: center;">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('customerForm');
+    const nameInput = document.getElementById('customerName');
+    const phoneInput = document.getElementById('customerPhone');
+    const emailInput = document.getElementById('customerEmail');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    if (nameInput) {
+        nameInput.focus();
+    }
+    
+    function validateField(input, errorMessage) {
+        const existingError = input.parentElement.querySelector('.field-error');
+        if (!input.value.trim()) {
+            input.style.borderColor = '#dc2626';
+            if (!existingError) {
+                const error = document.createElement('small');
+                error.className = 'field-error';
+                error.style.cssText = 'color: #dc2626; display: block; margin-top: 0.25rem; font-size: 0.8rem;';
+                error.textContent = errorMessage;
+                input.parentElement.appendChild(error);
+            }
+            return false;
+        } else {
+            input.style.borderColor = '#e0e0e0';
+            if (existingError) {
+                existingError.remove();
+            }
+            return true;
+        }
+    }
+    
+    function validateEmail(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+    }
+    
+    nameInput.addEventListener('blur', function() {
+        validateField(this, 'Customer name is required');
+    });
+    
+    phoneInput.addEventListener('blur', function() {
+        validateField(this, 'Phone number is required');
+    });
+    
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        [nameInput, phoneInput, emailInput].forEach(input => {
+            input.style.borderColor = '#e0e0e0';
+            const error = input.parentElement.querySelector('.field-error');
+            if (error) error.remove();
+        });
+        
+        if (!nameInput.value.trim()) {
+            nameInput.style.borderColor = '#dc2626';
+            isValid = false;
+        }
+        if (!phoneInput.value.trim()) {
+            phoneInput.style.borderColor = '#dc2626';
+            isValid = false;
+        }
+        const email = emailInput.value.trim();
+        if (email && !validateEmail(email)) {
+            emailInput.style.borderColor = '#dc2626';
+            const existingError = emailInput.parentElement.querySelector('.field-error');
+            if (!existingError) {
+                const error = document.createElement('small');
+                error.className = 'field-error';
+                error.style.cssText = 'color: #dc2626; display: block; margin-top: 0.25rem; font-size: 0.8rem;';
+                error.textContent = 'Please enter a valid email address';
+                emailInput.parentElement.appendChild(error);
+            }
+            isValid = false;
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            showToast('Please fill in all required fields correctly', 'error');
+            if (!nameInput.value.trim()) {
+                nameInput.focus();
+            } else if (!phoneInput.value.trim()) {
+                phoneInput.focus();
+            } else if (email && !validateEmail(email)) {
+                emailInput.focus();
+            }
+        } else {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = 'Saving...';
+        }
+    });
+    
+    [nameInput, phoneInput, emailInput].forEach(input => {
+        input.addEventListener('input', function() {
+            this.style.borderColor = '#e0e0e0';
+            const error = this.parentElement.querySelector('.field-error');
+            if (error) error.remove();
+        });
+    });
+});
+
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#dc2626' : '#3b82f6'};
+        color: white;
+        border-radius: 8px;
+        z-index: 10000;
+        font-weight: 500;
+        animation: slideIn 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => { toast.remove(); }, 3000);
+}
+</script>
+{% endblock %}

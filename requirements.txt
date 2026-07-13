@@ -1,0 +1,12 @@
+Django~=5.0.0
+djangorestframework==3.14.0
+django-cors-headers~=4.9.0
+python-dotenv~=1.0.0
+Pillow~=10.4.0
+django-debug-toolbar~=4.2.0
+django-extensions~=3.2.3
+django-filter~=25.2
+django-allauth~=65.0.0
+djangorestframework-simplejwt~=5.5.1
+drf-yasg~=1.21.15
+redis==5.0.1  # For caching (optional)

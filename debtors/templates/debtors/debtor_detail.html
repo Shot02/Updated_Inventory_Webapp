@@ -1,0 +1,315 @@
+<!-- debtors/templates/debtors/debtor_detail.html -->
+{% extends 'base.html' %}
+
+{% block title %}{{ customer_name }} - Debtor Details{% endblock %}
+
+{% block content %}
+<style>
+    .debtor-detail-container {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+    
+    .header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #e0e0e0;
+    }
+    
+    .header-section h1 {
+        color: #dc2626;
+        margin: 0;
+    }
+    
+    .customer-info {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+        border-left: 4px solid #dc2626;
+    }
+    
+    .customer-info h3 {
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+    
+    .customer-info p {
+        margin: 0.3rem 0;
+        color: #666;
+    }
+    
+    .summary-card {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 12px;
+        text-align: center;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .summary-card h2 {
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+        opacity: 0.9;
+    }
+    
+    .summary-card .amount {
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+    
+    .summary-card .subtext {
+        margin-top: 0.5rem;
+        font-size: 0.9rem;
+        opacity: 0.8;
+    }
+    
+    .summary-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-item {
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .stat-item .label {
+        font-size: 0.85rem;
+        color: #666;
+        text-transform: uppercase;
+    }
+    
+    .stat-item .value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #10b981;
+    }
+    
+    .stat-item .value.red {
+        color: #dc2626;
+    }
+    
+    .table-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+    
+    .table-container h3 {
+        padding: 1rem 1.5rem;
+        margin: 0;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    table th {
+        background: #f8f9fa;
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        color: #333;
+        border-bottom: 2px solid #e0e0e0;
+    }
+    
+    table td {
+        padding: 1rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    table tr:hover {
+        background: #f8f9fa;
+    }
+    
+    .badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .badge-success { background: #d1fae5; color: #065f46; }
+    .badge-warning { background: #fef3c7; color: #92400e; }
+    .badge-danger { background: #fee2e2; color: #b91c1c; }
+    
+    .pay-all-btn {
+        display: inline-block;
+        padding: 0.75rem 2rem;
+        background: #10b981;
+        color: white;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+    }
+    
+    .pay-all-btn:hover {
+        background: #059669;
+        transform: translateY(-2px);
+    }
+    
+    .pay-all-container {
+        text-align: center;
+        padding: 2rem;
+        background: #f0fdf4;
+        border-radius: 12px;
+        border: 2px solid #10b981;
+        margin-bottom: 2rem;
+    }
+    
+    .back-btn {
+        display: inline-block;
+        padding: 0.5rem 1.5rem;
+        background: #6b7280;
+        color: white;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+    
+    .back-btn:hover {
+        background: #4b5563;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    
+    .payment-history {
+        background: #f8f9fa;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        margin-top: 0.5rem;
+        font-size: 0.85rem;
+    }
+</style>
+
+<div class="debtor-detail-container">
+    <div class="header-section">
+        <div>
+            <h1>Debtor Details</h1>
+            <p style="color: #666; margin-top: 0.5rem;">Customer: <strong>{{ customer_name }}</strong></p>
+        </div>
+        <div>
+            <a href="{% url 'debtors_list' %}" class="back-btn">← Back to Debtors</a>
+        </div>
+    </div>
+
+    <!-- Customer Information -->
+    <div class="customer-info">
+        <h3>Customer Information</h3>
+        <p><strong>Name:</strong> {{ customer_name }}</p>
+        <p><strong>Phone:</strong> {{ customer_phone|default:"Not provided" }}</p>
+        <p><strong>Total Debts:</strong> {{ sale_count }} invoice{{ sale_count|pluralize }}</p>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="summary-stats">
+        <div class="stat-item">
+            <div class="label">Total Owed</div>
+            <div class="value">₦{{ total_owed|floatformat:2 }}</div>
+        </div>
+        <div class="stat-item">
+            <div class="label">Total Paid</div>
+            <div class="value">₦{{ total_paid|floatformat:2 }}</div>
+        </div>
+        <div class="stat-item">
+            <div class="label">Outstanding Balance</div>
+            <div class="value red">₦{{ total_balance|floatformat:2 }}</div>
+        </div>
+    </div>
+
+    <!-- Individual Debts Table -->
+    <div class="table-container">
+        <h3>Individual Debts</h3>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Invoice</th>
+                        <th>Date</th>
+                        <th>Total</th>
+                        <th>Paid</th>
+                        <th>Balance</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sale in sales %}
+                    <tr>
+                        <td><strong>{{ sale.invoice_number }}</strong></td>
+                        <td>{{ sale.created_at|date:"M d, Y H:i" }}</td>
+                        <td>₦{{ sale.total|floatformat:2 }}</td>
+                        <td>₦{{ sale.amount_paid|floatformat:2 }}</td>
+                        <td><strong style="color: #dc2626;">₦{{ sale.balance|floatformat:2 }}</strong></td>
+                        <td>
+                            {% if sale.payment_status == 'paid' %}
+                            <span class="badge badge-success">Paid</span>
+                            {% elif sale.payment_status == 'partial' %}
+                            <span class="badge badge-warning">Partial</span>
+                            {% else %}
+                            <span class="badge badge-danger">Unpaid</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <a href="{% url 'record_payment' sale.id %}" class="btn btn-success btn-sm">
+                                    Pay This
+                                </a>
+                                <a href="{% url 'view_receipt' sale.id %}" class="btn btn-primary btn-sm">
+                                    View Receipt
+                                </a>
+                            </div>
+                            
+                            {% if sale.payments.all %}
+                            <div class="payment-history">
+                                <strong>Payment History:</strong><br>
+                                {% for payment in sale.payments.all %}
+                                <small>
+                                    {{ payment.created_at|date:"M d, Y H:i" }} - 
+                                    ₦{{ payment.amount|floatformat:2 }} 
+                                    ({{ payment.payment_method|title }})
+                                    {% if payment.reference %}- Ref: {{ payment.reference }}{% endif %}
+                                </small><br>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 2rem; color: #666;">
+                            No debts found for this customer.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

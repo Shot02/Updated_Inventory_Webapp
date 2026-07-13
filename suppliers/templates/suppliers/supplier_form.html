@@ -1,0 +1,280 @@
+<!-- suppliers/templates/suppliers/supplier_form.html -->
+{% extends 'base.html' %}
+
+{% block title %}{{ action }} Supplier{% endblock %}
+
+{% block content %}
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e0e0e0;
+    }
+    
+    .error-message {
+        color: #dc2626;
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+        display: none;
+    }
+    
+    .input-error {
+        border-color: #dc2626 !important;
+        box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.1) !important;
+    }
+    
+    .alert {
+        padding: 0.75rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+    
+    .alert-error {
+        background: #fee2e2;
+        color: #b91c1c;
+        border: 1px solid #fecaca;
+    }
+    
+    .alert-success {
+        background: #d1fae5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+    }
+    
+    @media (max-width: 768px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="form-container">
+    <h1 style="margin-bottom: 2rem; color: #dc2626;">{{ action }} Supplier</h1>
+    
+    {% if messages %}
+    <div style="margin-bottom: 1.5rem;">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <div class="card">
+        <form method="post" id="supplierForm">
+            {% csrf_token %}
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="name">Supplier Name <span style="color: #dc2626;">*</span></label>
+                    <input type="text" id="name" name="name" class="form-control" 
+                           value="{{ supplier.name|default:'' }}" required
+                           placeholder="Enter supplier name">
+                    <div id="nameError" class="error-message">Supplier name is required</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="contact_person">Contact Person</label>
+                    <input type="text" id="contact_person" name="contact_person" class="form-control" 
+                           value="{{ supplier.contact_person|default:'' }}"
+                           placeholder="Enter contact person name">
+                </div>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="phone">Phone Number <span style="color: #dc2626;">*</span></label>
+                    <input type="tel" id="phone" name="phone" class="form-control" 
+                           value="{{ supplier.phone|default:'' }}" required
+                           placeholder="Enter phone number">
+                    <div id="phoneError" class="error-message">Phone number is required</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" class="form-control" 
+                           value="{{ supplier.email|default:'' }}"
+                           placeholder="Enter email address">
+                    <div id="emailError" class="error-message">Please enter a valid email address</div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="address">Address</label>
+                <textarea id="address" name="address" class="form-control" rows="3" 
+                          placeholder="Enter address">{{ supplier.address|default:'' }}</textarea>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="website">Website URL</label>
+                    <input type="url" id="website" name="website" class="form-control" 
+                           value="{{ supplier.website|default:'' }}"
+                           placeholder="https://example.com">
+                    <div id="websiteError" class="error-message">Please enter a valid website URL</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">Notes</label>
+                    <textarea id="notes" name="notes" class="form-control" rows="3" 
+                              placeholder="Additional notes about this supplier">{{ supplier.notes|default:'' }}</textarea>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="checkbox" id="is_active" name="is_active" value="1" 
+                           {% if supplier.is_active or not supplier %}checked{% endif %}>
+                    <span>Supplier is Active</span>
+                </label>
+            </div>
+            
+            <div style="background: #f0f9ff; padding: 1rem; border-radius: 8px; margin: 1.5rem 0; border-left: 4px solid #3b82f6;">
+                <p style="margin: 0; color: #1e40af; font-size: 0.9rem; font-weight: 500;">
+                    Note: Fields marked with <span style="color: #dc2626;">*</span> are required.
+                </p>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-success" style="flex: 1;" id="submitBtn">
+                    {{ action }} Supplier
+                </button>
+                <a href="{% url 'supplier_list' %}" class="btn btn-danger">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('supplierForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const nameInput = document.getElementById('name');
+    const phoneInput = document.getElementById('phone');
+    const emailInput = document.getElementById('email');
+    const websiteInput = document.getElementById('website');
+    
+    if (nameInput) nameInput.focus();
+    
+    function validateField(input, errorElement, errorMessage) {
+        if (!input.value.trim()) {
+            input.classList.add('input-error');
+            errorElement.textContent = errorMessage;
+            errorElement.style.display = 'block';
+            return false;
+        } else {
+            input.classList.remove('input-error');
+            errorElement.style.display = 'none';
+            return true;
+        }
+    }
+    
+    function validateEmail(email) {
+        const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        return re.test(email);
+    }
+    
+    function validateWebsite(url) {
+        if (!url) return true;
+        const re = /^https?:\/\/[^\s/$.?#].[^\s]*$/;
+        return re.test(url);
+    }
+    
+    nameInput.addEventListener('blur', function() {
+        validateField(this, document.getElementById('nameError'), 'Supplier name is required');
+    });
+    
+    phoneInput.addEventListener('blur', function() {
+        validateField(this, document.getElementById('phoneError'), 'Phone number is required');
+    });
+    
+    emailInput.addEventListener('blur', function() {
+        const email = this.value.trim();
+        if (email && !validateEmail(email)) {
+            this.classList.add('input-error');
+            document.getElementById('emailError').textContent = 'Please enter a valid email address';
+            document.getElementById('emailError').style.display = 'block';
+        } else {
+            this.classList.remove('input-error');
+            document.getElementById('emailError').style.display = 'none';
+        }
+    });
+    
+    websiteInput.addEventListener('blur', function() {
+        const url = this.value.trim();
+        if (url && !validateWebsite(url)) {
+            this.classList.add('input-error');
+            document.getElementById('websiteError').textContent = 'Please enter a valid website URL';
+            document.getElementById('websiteError').style.display = 'block';
+        } else {
+            this.classList.remove('input-error');
+            document.getElementById('websiteError').style.display = 'none';
+        }
+    });
+    
+    [nameInput, phoneInput, emailInput, websiteInput].forEach(input => {
+        input.addEventListener('input', function() {
+            this.classList.remove('input-error');
+            const errorElement = document.getElementById(this.id + 'Error');
+            if (errorElement) errorElement.style.display = 'none';
+        });
+    });
+    
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+        
+        if (!nameInput.value.trim()) {
+            document.getElementById('nameError').style.display = 'block';
+            nameInput.classList.add('input-error');
+            isValid = false;
+        }
+        if (!phoneInput.value.trim()) {
+            document.getElementById('phoneError').style.display = 'block';
+            phoneInput.classList.add('input-error');
+            isValid = false;
+        }
+        const email = emailInput.value.trim();
+        if (email && !validateEmail(email)) {
+            document.getElementById('emailError').textContent = 'Please enter a valid email address';
+            document.getElementById('emailError').style.display = 'block';
+            emailInput.classList.add('input-error');
+            isValid = false;
+        }
+        const website = websiteInput.value.trim();
+        if (website && !validateWebsite(website)) {
+            document.getElementById('websiteError').textContent = 'Please enter a valid website URL';
+            document.getElementById('websiteError').style.display = 'block';
+            websiteInput.classList.add('input-error');
+            isValid = false;
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            if (!nameInput.value.trim()) nameInput.focus();
+            else if (!phoneInput.value.trim()) phoneInput.focus();
+            else if (emailInput.value.trim() && !validateEmail(emailInput.value.trim())) emailInput.focus();
+            else if (websiteInput.value.trim() && !validateWebsite(websiteInput.value.trim())) websiteInput.focus();
+            return false;
+        }
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = 'Processing...';
+    });
+});
+</script>
+{% endblock %}

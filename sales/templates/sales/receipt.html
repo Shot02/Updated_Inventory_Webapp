@@ -1,0 +1,310 @@
+<!-- sales/templates/sales/receipt.html -->
+{% extends 'base.html' %}
+
+{% block title %}Receipt - {{ sale.invoice_number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        .receipt-container, .receipt-container * {
+            visibility: visible;
+        }
+        .receipt-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+        .no-print {
+            display: none !important;
+        }
+    }
+    
+    .receipt-container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .receipt-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #10b981;
+    }
+    
+    .receipt-header h1 {
+        color: #10b981;
+        margin-bottom: 0.5rem;
+        font-size: 2rem;
+    }
+    
+    .receipt-header h2 {
+        color: #666;
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+    }
+    
+    .receipt-info {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+    
+    .info-section h3 {
+        color: #333;
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
+    }
+    
+    .info-section p {
+        margin: 0.3rem 0;
+        color: #555;
+    }
+    
+    .payment-methods-list {
+        margin-top: 0.5rem;
+        padding: 0.5rem;
+        background: white;
+        border-radius: 6px;
+        border: 1px solid #e0e0e0;
+    }
+    
+    .payment-method-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.3rem 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .payment-method-item:last-child {
+        border-bottom: none;
+    }
+    
+    .payment-method-label {
+        font-weight: 500;
+        color: #333;
+    }
+    
+    .payment-method-amount {
+        font-weight: 600;
+        color: #10b981;
+    }
+    
+    .receipt-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 2rem;
+    }
+    
+    .receipt-table th {
+        background: #10b981;
+        color: white;
+        padding: 1rem;
+        text-align: left;
+    }
+    
+    .receipt-table td {
+        padding: 0.8rem 1rem;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .receipt-table tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .receipt-summary {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+    
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.8rem;
+        font-size: 1.1rem;
+    }
+    
+    .summary-row.total {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #10b981;
+        border-top: 2px solid #ddd;
+        padding-top: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .payment-status {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+    
+    .status-paid {
+        background: #d1fae5;
+        color: #065f46;
+    }
+    
+    .status-partial {
+        background: #fef3c7;
+        color: #92400e;
+    }
+    
+    .status-unpaid {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+    
+    .receipt-footer {
+        text-align: center;
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px dashed #ccc;
+        color: #666;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="receipt-container">
+    <div class="receipt-header">
+        <h1>WADRASH</h1>
+        <h2>NIG ENTERPRISES</h2>
+        <h2>SALES RECEIPT</h2>
+        <p style="font-size: 1.2rem;"><strong>Invoice: {{ sale.invoice_number }}</strong></p>
+        <p style="font-size: 1rem; color: #666;"><strong>Branch:</strong> {{ sale.branch.name|default:"N/A" }}</p>
+    </div>
+    
+    <div class="receipt-info">
+        <div class="info-section">
+            <h3>Customer Information</h3>
+            <p><strong>Name:</strong> {{ sale.customer_name|default:"-" }}</p>
+            <p><strong>Phone:</strong> {{ sale.customer_phone|default:"-" }}</p>
+            <p><strong>Payment Status:</strong>     
+                <span class="payment-status status-{{ sale.payment_status }}">
+                    {{ sale.payment_status|title }}
+                </span>
+            </p>
+        </div>
+        <div class="info-section" style="text-align: right;">
+            <h3>Transaction Details</h3>
+            <p><strong>Date:</strong> {{ sale.created_at|date:"F d, Y" }}</p>
+            <p><strong>Time:</strong> {{ sale.created_at|date:"h:i A" }}</p>
+            <p><strong>Served By:</strong>                     
+                        {% if sale.staff %}
+                            {{ sale.staff.get_full_name|default:sale.staff.username }}
+                        {% else %}
+                            No staff assigned
+                        {% endif %}
+            </p>
+            
+            <h3 style="margin-top: 1rem;">Payment Methods</h3>
+            <div class="payment-methods-list">
+                {% for payment in sale.payments.all %}
+                <div class="payment-method-item">
+                    <span class="payment-method-label">{{ payment.payment_method|title }}</span>
+                    <span class="payment-method-amount">₦{{ payment.amount|floatformat:2 }}</span>
+                </div>
+                {% empty %}
+                <div class="payment-method-item">
+                    <span class="payment-method-label">Cash</span>
+                    <span class="payment-method-amount">₦{{ sale.amount_paid|floatformat:2 }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <table class="receipt-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Product</th>
+                <th>Price</th>
+                <th>Qty</th>
+                <th>Discount</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in sale.items.all %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ item.product_name }}</td>
+                <td>₦{{ item.price|floatformat:2 }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>₦{{ item.discount|floatformat:2 }}</td>
+                <td><strong>₦{{ item.total|floatformat:2 }}</strong></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div class="receipt-summary">
+        <div class="summary-row">
+            <span>Subtotal:</span>
+            <span>₦{{ sale.subtotal|floatformat:2 }}</span>
+        </div>
+        <div class="summary-row">
+            <span>Total Item Discounts:</span>
+            <span>₦{{ item_discounts_total|floatformat:2 }}</span>
+        </div>
+        <div class="summary-row total">
+            <span>GRAND TOTAL:</span>
+            <span>₦{{ sale.total|floatformat:2 }}</span>
+        </div>
+        <div class="summary-row">
+            <span>Total Amount Paid:</span>
+            <span>₦{{ sale.amount_paid|floatformat:2 }}</span>
+        </div>
+        {% if sale.balance > 0 %}
+        <div class="summary-row" style="color: #dc3545">
+            <span><strong>Balance Due:</strong></span>
+            <span><strong>₦{{ sale.balance|floatformat:2 }}</strong></span>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="receipt-footer">
+        <p>Thank you for your business!</p>
+        <p>For inquiries, please contact:</p>
+        <p>0813 996 2877, 0912 484 0161</p>
+        <p>wadrashshittu@gmail.com</p>
+        <p>ALH. WAHEED WAREHOUSE, DANKANO AREA, ILESHA IBARIBA ROAD, SANGO SAKI.</p>
+    </div>
+    
+    <div class="action-buttons no-print">
+        <button onclick="window.print()" class="btn btn-primary">
+            Print Receipt
+        </button>
+        <a href="{% url 'home' %}" class="btn btn-success">
+            New Sale
+        </a>
+        <a href="{% url 'sale_history' %}" class="btn btn-info">
+            Sales History
+        </a>
+    </div>
+</div>
+{% endblock %}

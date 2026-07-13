@@ -1,0 +1,257 @@
+<!-- staff/templates/staff/register_staff.html -->
+{% extends 'base.html' %}
+
+{% block title %}Register Staff{% endblock %}
+
+{% block content %}
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+    
+    .form-section {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        margin-bottom: 1.5rem;
+        border-left: 4px solid #10b981;
+    }
+    
+    .form-section h3 {
+        color: #10b981;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #f0f0f0;
+        font-size: 1.1rem;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+    
+    .form-actions .btn {
+        flex: 1;
+        padding: 0.75rem;
+        font-size: 1rem;
+    }
+    
+    .alert {
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .alert-error {
+        background: #fee2e2;
+        color: #b91c1c;
+        border: 1px solid #fecaca;
+    }
+    
+    .alert-success {
+        background: #d1fae5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+    }
+    
+    .alert-warning {
+        background: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+    
+    @media (max-width: 768px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="form-container">
+    <h1 style="color: #10b981; margin-bottom: 2rem;">Register New Staff Member</h1>
+    
+    {% if form.errors %}
+    <div class="alert alert-error">
+        <strong>Please fix the following errors:</strong>
+        <ul style="margin: 0.5rem 0 0 1.5rem;">
+            {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                    <li>{{ field|title }}: {{ error }}</li>
+                {% endfor %}
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    
+    <div class="card">
+        <form method="post" id="staffForm">
+            {% csrf_token %}
+            
+            <div class="form-section">
+                <h3>Personal Information</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="id_first_name">First Name *</label>
+                        <input type="text" id="id_first_name" name="first_name" class="form-control" 
+                               value="{{ form.first_name.value|default:'' }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_last_name">Last Name *</label>
+                        <input type="text" id="id_last_name" name="last_name" class="form-control" 
+                               value="{{ form.last_name.value|default:'' }}" required>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="id_phone">Phone Number</label>
+                        <input type="tel" id="id_phone" name="phone" class="form-control" 
+                               value="{{ form.phone.value|default:'' }}"
+                               placeholder="Enter phone number (optional)">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>Account Information</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="id_username">Username *</label>
+                        <input type="text" id="id_username" name="username" class="form-control" 
+                               value="{{ form.username.value|default:'' }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_email">Email Address *</label>
+                        <input type="email" id="id_email" name="email" class="form-control" 
+                               value="{{ form.email.value|default:'' }}" required>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="id_role">Role *</label>
+                        <select id="id_role" name="role" class="form-control" required>
+                            <option value="">-- Select Role --</option>
+                            {% for role_value, role_label in form.fields.role.choices %}
+                            <option value="{{ role_value }}" {% if form.role.value == role_value %}selected{% endif %}>
+                                {{ role_label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_branch">Branch *</label>
+                        <select id="id_branch" name="branch" class="form-control" required>
+                            <option value="">-- Select Branch --</option>
+                            {% for branch in branches %}
+                            <option value="{{ branch.id }}">{{ branch.name }} ({{ branch.code }})</option>
+                            {% endfor %}
+                        </select>
+                        <small style="display: block; margin-top: 0.3rem; color: #666; font-size: 0.85rem;">
+                            Staff will only have access to this branch's data
+                        </small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>Security</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="id_password1">Password *</label>
+                        <input type="password" id="id_password1" name="password1" class="form-control" required>
+                        <small style="color: #666; display: block; margin-top: 0.3rem;">Minimum 8 characters</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_password2">Confirm Password *</label>
+                        <input type="password" id="id_password2" name="password2" class="form-control" required>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-success" id="submitBtn">Register Staff</button>
+                <a href="{% url 'staff_list' %}" class="btn btn-danger" style="text-align: center;">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('staffForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const usernameInput = document.getElementById('id_username');
+    const emailInput = document.getElementById('id_email');
+    const firstNameInput = document.getElementById('id_first_name');
+    const lastNameInput = document.getElementById('id_last_name');
+    const passwordInput = document.getElementById('id_password1');
+    const password2Input = document.getElementById('id_password2');
+    
+    usernameInput.focus();
+    
+    function validatePasswords() {
+        const password = passwordInput.value;
+        const password2 = password2Input.value;
+        if (password !== password2) {
+            password2Input.setCustomValidity('Passwords do not match');
+            return false;
+        } else {
+            password2Input.setCustomValidity('');
+            return true;
+        }
+    }
+    
+    passwordInput.addEventListener('input', validatePasswords);
+    password2Input.addEventListener('input', validatePasswords);
+    
+    form.addEventListener('submit', function(e) {
+        const username = usernameInput.value.trim();
+        const email = emailInput.value.trim();
+        const firstName = firstNameInput.value.trim();
+        const lastName = lastNameInput.value.trim();
+        const password = passwordInput.value;
+        
+        if (!username) {
+            e.preventDefault();
+            usernameInput.focus();
+            return;
+        }
+        if (!email) {
+            e.preventDefault();
+            emailInput.focus();
+            return;
+        }
+        if (!firstName) {
+            e.preventDefault();
+            firstNameInput.focus();
+            return;
+        }
+        if (!lastName) {
+            e.preventDefault();
+            lastNameInput.focus();
+            return;
+        }
+        if (password.length < 8) {
+            e.preventDefault();
+            passwordInput.focus();
+            return;
+        }
+        if (!validatePasswords()) {
+            e.preventDefault();
+            password2Input.focus();
+            return;
+        }
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = 'Registering...';
+    });
+});
+</script>
+{% endblock %}

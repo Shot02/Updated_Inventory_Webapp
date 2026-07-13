@@ -1,0 +1,351 @@
+<!-- suppliers/templates/suppliers/supplier_detail.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ supplier.name }} - Supplier Details{% endblock %}
+
+{% block content %}
+<style>
+    .supplier-detail-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #e0e0e0;
+    }
+    
+    .header-section h1 {
+        color: #dc2626;
+        margin: 0;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        text-align: center;
+        border-left: 4px solid #10b981;
+    }
+    
+    .stat-card .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #10b981;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-card .stat-label {
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    .stat-card.profit {
+        border-left-color: #8b5cf6;
+    }
+    
+    .stat-card.profit .stat-value {
+        color: #8b5cf6;
+    }
+    
+    .stat-card.sold {
+        border-left-color: #3b82f6;
+    }
+    
+    .stat-card.sold .stat-value {
+        color: #3b82f6;
+    }
+    
+    .stat-card.low-stock {
+        border-left-color: #f59e0b;
+    }
+    
+    .stat-card.low-stock .stat-value {
+        color: #f59e0b;
+    }
+    
+    .stat-card.out-of-stock {
+        border-left-color: #ef4444;
+    }
+    
+    .stat-card.out-of-stock .stat-value {
+        color: #ef4444;
+    }
+    
+    .supplier-info {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+    
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+    
+    .info-item {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .info-item:last-child {
+        border-bottom: none;
+    }
+    
+    .info-item strong {
+        display: block;
+        color: #666;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .info-item span {
+        font-size: 1.1rem;
+        color: #333;
+    }
+    
+    .product-table-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        overflow: hidden;
+        margin-top: 2rem;
+    }
+    
+    .product-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .product-table th {
+        background: #dc2626;
+        color: white;
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+    }
+    
+    .product-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .product-table tr:hover {
+        background: #f8f9fa;
+    }
+    
+    .product-table tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .profit-positive {
+        color: #10b981;
+        font-weight: bold;
+    }
+    
+    .profit-negative {
+        color: #ef4444;
+        font-weight: bold;
+    }
+    
+    .back-btn {
+        display: inline-block;
+        padding: 0.5rem 1.5rem;
+        background: #10b981;
+        color: white;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+    
+    .back-btn:hover {
+        background: #059669;
+    }
+    
+    .branch-badge {
+        display: inline-block;
+        padding: 0.2rem 0.5rem;
+        background: #e3f2fd;
+        color: #1565c0;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        border: 1px solid #90caf9;
+    }
+</style>
+
+<div class="supplier-detail-container">
+    <div class="header-section">
+        <div>
+            <h1>{{ supplier.name }}</h1>
+            <p style="color: #666; margin-top: 0.5rem;">Supplier Analytics Dashboard</p>
+        </div>
+        <div>
+            <a href="{% url 'supplier_list' %}" class="back-btn">← Back to Suppliers</a>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value">{{ total_products }}</div>
+            <div class="stat-label">Total Products</div>
+        </div>
+        <div class="stat-card sold">
+            <div class="stat-value">{{ total_products_sold }}</div>
+            <div class="stat-label">Products Sold</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">₦{{ total_sales_amount|floatformat:2 }}</div>
+            <div class="stat-label">Total Sales Amount</div>
+        </div>
+        <div class="stat-card profit">
+            <div class="stat-value">₦{{ total_profit|floatformat:2 }}</div>
+            <div class="stat-label">Total Profit</div>
+        </div>
+        <div class="stat-card low-stock">
+            <div class="stat-value">{{ low_stock_count }}</div>
+            <div class="stat-label">Low Stock Items</div>
+        </div>
+        <div class="stat-card out-of-stock">
+            <div class="stat-value">{{ out_of_stock_count }}</div>
+            <div class="stat-label">Out of Stock</div>
+        </div>
+    </div>
+
+    <!-- Supplier Information -->
+    <div class="supplier-info">
+        <h3 style="color: #dc2626; margin-bottom: 1rem;">Supplier Information</h3>
+        <div class="info-grid">
+            <div class="info-item">
+                <strong>Contact Person</strong>
+                <span>{{ supplier.contact_person|default:"Not specified" }}</span>
+            </div>
+            <div class="info-item">
+                <strong>Phone</strong>
+                <span>{{ supplier.phone|default:"Not specified" }}</span>
+            </div>
+            <div class="info-item">
+                <strong>Email</strong>
+                <span>{{ supplier.email|default:"Not specified" }}</span>
+            </div>
+            <div class="info-item">
+                <strong>Website</strong>
+                <span>{{ supplier.website|default:"Not specified" }}</span>
+            </div>
+            <div class="info-item">
+                <strong>Address</strong>
+                <span>{{ supplier.address|default:"Not specified" }}</span>
+            </div>
+            <div class="info-item">
+                <strong>Status</strong>
+                <span>
+                    {% if supplier.is_active %}
+                    <span class="status-badge status-active">Active</span>
+                    {% else %}
+                    <span class="status-badge status-inactive">Inactive</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="info-item">
+                <strong>Branches Served</strong>
+                <span>
+                    {% for branch in branches %}
+                    <span class="branch-badge">{{ branch.name }}</span>
+                    {% empty %}
+                    <span>No branches</span>
+                    {% endfor %}
+                </span>
+            </div>
+        </div>
+        {% if supplier.notes %}
+        <div style="margin-top: 1rem; padding: 1rem; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b;">
+            <strong>Notes:</strong> {{ supplier.notes }}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Products Table -->
+    <div class="product-table-container">
+        <div style="padding: 1rem; background: #f8f9fa; border-bottom: 1px solid #e0e0e0;">
+            <h3 style="margin: 0; color: #333;">Product Performance</h3>
+        </div>
+        <div style="overflow-x: auto;">
+            <table class="product-table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>SKU</th>
+                        <th>Category</th>
+                        <th>Current Stock</th>
+                        <th>Quantity Sold</th>
+                        <th>Revenue</th>
+                        <th>Cost</th>
+                        <th>Profit</th>
+                        <th>Margin</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in product_analytics %}
+                    <tr>
+                        <td><strong>{{ item.product.name }}</strong></td>
+                        <td><code>{{ item.product.sku }}</code></td>
+                        <td>{{ item.product.category.name|default:"N/A" }}</td>
+                        <td>
+                            {% if item.current_stock <= 0 %}
+                                <span class="badge badge-danger">{{ item.current_stock }}</span>
+                            {% elif item.low_stock %}
+                                <span class="badge badge-warning">{{ item.current_stock }}</span>
+                            {% else %}
+                                <span class="badge badge-success">{{ item.current_stock }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.quantity_sold }}</td>
+                        <td>₦{{ item.revenue|floatformat:2 }}</td>
+                        <td>₦{{ item.cost|floatformat:2 }}</td>
+                        <td class="{% if item.profit >= 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                            ₦{{ item.profit|floatformat:2 }}
+                        </td>
+                        <td>
+                            {% if item.revenue > 0 %}
+                                {% widthratio item.profit item.revenue 100 %}%
+                            {% else %}
+                                0%
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 2rem;">
+                            <p style="color: #666;">No products found for this supplier.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Any additional JavaScript can go here
+});
+</script>
+{% endblock %}

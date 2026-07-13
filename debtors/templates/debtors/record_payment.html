@@ -1,0 +1,245 @@
+<!-- debtors/templates/debtors/record_payment.html -->
+{% extends 'base.html' %}
+
+{% block title %}Record Payment{% endblock %}
+
+{% block content %}
+<style>
+    .payment-container {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .sale-info-box {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+        border-left: 4px solid #10b981;
+    }
+    
+    .sale-info-box p {
+        margin: 0.5rem 0;
+        font-size: 0.95rem;
+    }
+    
+    .balance-display {
+        background: #fee2e2;
+        padding: 1rem;
+        border-radius: 8px;
+        border: 1px solid #fecaca;
+        margin-top: 1rem;
+    }
+    
+    .balance-display strong {
+        color: #dc2626;
+        font-size: 1.3rem;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #333;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+    
+    .input-error {
+        border-color: #dc2626 !important;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+    }
+    
+    .error-message {
+        color: #dc2626;
+        font-size: 0.9rem;
+        margin-top: 0.25rem;
+        display: none;
+    }
+    
+    .amount-input-wrapper {
+        position: relative;
+    }
+    
+    .amount-input-wrapper .currency-symbol {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #666;
+        font-weight: 500;
+    }
+    
+    .amount-input-wrapper .form-control {
+        padding-left: 30px;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+    
+    .form-actions .btn {
+        flex: 1;
+        padding: 0.75rem;
+        font-size: 1.1rem;
+    }
+    
+    .spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(255,255,255,0.3);
+        border-radius: 50%;
+        border-top: 3px solid white;
+        animation: spin 1s linear infinite;
+        vertical-align: middle;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+<div class="payment-container">
+    <h1 style="color: #dc2626; margin-bottom: 2rem;">Record Payment</h1>
+    
+    <div class="card">
+        <div class="sale-info-box">
+            <p><strong>Invoice:</strong> {{ sale.invoice_number }}</p>
+            <p><strong>Customer:</strong> {{ sale.customer_name|default:"-" }}</p>
+            <p><strong>Total Amount:</strong> ₦{{ sale.total|floatformat:2 }}</p>
+            <p><strong>Amount Paid:</strong> ₦{{ sale.amount_paid|floatformat:2 }}</p>
+            <div class="balance-display">
+                <p style="margin: 0; font-weight: 600;">Outstanding Balance:</p>
+                <strong>₦{{ sale.balance|floatformat:2 }}</strong>
+            </div>
+        </div>
+        
+        <form method="post" id="paymentForm">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="paymentAmount">Payment Amount <span style="color: #dc2626;">*</span></label>
+                <div class="amount-input-wrapper">
+                    <span class="currency-symbol">₦</span>
+                    <input type="number" id="paymentAmount" name="amount" class="form-control" 
+                           step="0.01" min="0.01" max="{{ sale.balance|floatformat:2 }}" 
+                           placeholder="Enter payment amount" required
+                           value="{{ sale.balance|floatformat:2 }}">
+                </div>
+                <small style="color: #666;">Maximum: ₦{{ sale.balance|floatformat:2 }}</small>
+                <div id="amountError" class="error-message"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="paymentMethod">Payment Method <span style="color: #dc2626;">*</span></label>
+                <select id="paymentMethod" name="payment_method" class="form-control" required>
+                    <option value="cash">Cash</option>
+                    <option value="transfer">Bank Transfer</option>
+                    <option value="card">Card</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="paymentReference">Reference Number</label>
+                <input type="text" id="paymentReference" name="reference" class="form-control" 
+                       placeholder="Enter reference number if any">
+            </div>
+            
+            <div class="form-group">
+                <label for="paymentNotes">Notes</label>
+                <textarea id="paymentNotes" name="notes" class="form-control" rows="3" 
+                          placeholder="Optional notes about this payment"></textarea>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-success" id="submitBtn">
+                    Record Payment
+                </button>
+                <a href="{% url 'debtors_list' %}" class="btn btn-danger" style="text-align: center;">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('paymentForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const amountInput = document.getElementById('paymentAmount');
+    const amountError = document.getElementById('amountError');
+    const maxAmount = parseFloat('{{ sale.balance }}');
+    
+    amountInput.focus();
+    amountInput.max = maxAmount.toFixed(2);
+    
+    // Real-time validation
+    amountInput.addEventListener('input', function() {
+        const enteredAmount = parseFloat(this.value) || 0;
+        amountError.style.display = 'none';
+        amountInput.classList.remove('input-error');
+        
+        if (enteredAmount <= 0) {
+            showError('Please enter a payment amount greater than 0');
+            submitBtn.disabled = true;
+        } else if (enteredAmount > maxAmount) {
+            showError(`Payment amount cannot exceed ₦${maxAmount.toFixed(2)}`);
+            submitBtn.disabled = true;
+        } else {
+            submitBtn.disabled = false;
+        }
+    });
+    
+    function showError(message) {
+        amountError.textContent = message;
+        amountError.style.display = 'block';
+        amountInput.classList.add('input-error');
+    }
+    
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        const amount = parseFloat(amountInput.value) || 0;
+        amountError.style.display = 'none';
+        amountInput.classList.remove('input-error');
+        
+        if (amount <= 0) {
+            e.preventDefault();
+            showError('Please enter a payment amount greater than 0');
+            amountInput.focus();
+            return;
+        }
+        if (amount > maxAmount) {
+            e.preventDefault();
+            showError(`Payment amount cannot exceed ₦${maxAmount.toFixed(2)}`);
+            amountInput.focus();
+            return;
+        }
+        
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner"></span> Processing...';
+    });
+});
+</script>
+{% endblock %}

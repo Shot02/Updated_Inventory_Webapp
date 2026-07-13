@@ -1,0 +1,341 @@
+{% extends 'base.html' %}
+
+{% block title %}Branches{% endblock %}
+
+{% block content %}
+<style>
+    .branch-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+    }
+    
+    .branch-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+        border-left: 4px solid #10b981;
+        transition: all 0.3s;
+    }
+    
+    .branch-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .branch-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .branch-name {
+        font-size: 1.3rem;
+        font-weight: bold;
+        color: #10b981;
+        margin: 0;
+    }
+    
+    .branch-code {
+        background: #10b981;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    .branch-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
+        margin: 1rem 0;
+    }
+    
+    .stat-item {
+        background: #f8f9fa;
+        padding: 0.75rem;
+        border-radius: 8px;
+        text-align: center;
+    }
+    
+    .stat-value {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #333;
+    }
+    
+    .stat-label {
+        font-size: 0.8rem;
+        color: #666;
+    }
+    
+    .revenue-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+        margin: 1rem 0;
+        padding: 1rem;
+        background: #f0fdf4;
+        border-radius: 8px;
+        border: 1px solid #d1fae5;
+    }
+    
+    .revenue-item {
+        text-align: center;
+    }
+    
+    .revenue-amount {
+        font-size: 1.1rem;
+        font-weight: bold;
+    }
+    
+    .revenue-label {
+        font-size: 0.75rem;
+        color: #666;
+    }
+    
+    .branch-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e0e0e0;
+    }
+    
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    .status-active {
+        background: #d1fae5;
+        color: #065f46;
+    }
+    
+    .status-inactive {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: #666;
+    }
+    
+    .empty-state-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+    
+    .switch-link {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        background: #10b981;
+        color: white;
+        border-radius: 20px;
+        text-decoration: none;
+        font-size: 0.8rem;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .switch-link:hover {
+        background: #059669;
+        transform: translateY(-2px);
+    }
+    
+    .switch-link.active {
+        background: #dc2626;
+    }
+    
+    .switch-link.active:hover {
+        background: #b91c1c;
+    }
+    
+    .view-all-link {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        background: #3b82f6;
+        color: white;
+        border-radius: 20px;
+        text-decoration: none;
+        font-size: 0.8rem;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .view-all-link:hover {
+        background: #2563eb;
+        transform: translateY(-2px);
+    }
+    
+    .branch-info {
+        margin-bottom: 0.5rem;
+        padding: 0.5rem;
+        background: #f8f9fa;
+        border-radius: 6px;
+    }
+    
+    .branch-info strong {
+        color: #333;
+    }
+    
+    .branch-info span {
+        color: #666;
+    }
+</style>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h1>Branch Management</h1>
+    <div style="display: flex; gap: 1rem;">
+        <a href="{% url 'add_branch' %}" class="btn btn-primary">Add New Branch</a>
+    </div>
+</div>
+
+<!-- Current View Status -->
+<div style="margin-bottom: 1.5rem; padding: 1rem; background: #f0fdf4; border-radius: 8px; border: 1px solid #d1fae5; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <strong style="color: #333;">Current View:</strong> 
+        {% if current_branch %}
+            <span style="color: #10b981; font-weight: bold;">{{ current_branch.name }} ({{ current_branch.code }})</span>
+            <span style="display: inline-block; margin-left: 0.5rem; padding: 0.2rem 0.5rem; background: #10b981; color: white; border-radius: 12px; font-size: 0.7rem; font-weight: 600;">
+                Switched
+            </span>
+        {% else %}
+            <span style="color: #10b981; font-weight: bold;">All Branches</span>
+            <span style="display: inline-block; margin-left: 0.5rem; padding: 0.2rem 0.5rem; background: #3b82f6; color: white; border-radius: 12px; font-size: 0.7rem; font-weight: 600;">
+                Full View
+            </span>
+        {% endif %}
+    </div>
+    <div>
+        {% if current_branch %}
+            <a href="{% url 'clear_branch_selection' %}" class="view-all-link">View All Branches</a>
+        {% endif %}
+    </div>
+</div>
+
+{% if branches_with_stats %}
+<div class="branch-grid">
+    {% for item in branches_with_stats %}
+    <div class="branch-card">
+        <div class="branch-header">
+            <div class="branch-name">{{ item.branch.name }}</div>
+            <div class="branch-code">{{ item.branch.code }}</div>
+        </div>
+        
+        <div class="branch-info">
+            <div><strong>Location:</strong> <span>{{ item.branch.address|default:"Not specified" }}</span></div>
+            <div><strong>Manager:</strong> <span>{{ item.branch.manager|default:"Not assigned" }}</span></div>
+            <div><strong>Contact:</strong> <span>{{ item.branch.phone|default:"-" }} | {{ item.branch.email|default:"-" }}</span></div>
+        </div>
+        
+        <div class="branch-stats-grid">
+            <div class="stat-item">
+                <div class="stat-value">{{ item.staff_count|default:"0" }}</div>
+                <div class="stat-label">Staff</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ item.product_count|default:"0" }}</div>
+                <div class="stat-label">Products</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ item.sales_count|default:"0" }}</div>
+                <div class="stat-label">Sales</div>
+            </div>
+        </div>
+        
+        <div class="revenue-stats">
+            <div class="revenue-item">
+                <div class="revenue-amount" style="color: #10b981;">₦{{ item.cash_total|floatformat:2|default:"0.00" }}</div>
+                <div class="revenue-label">Cash</div>
+            </div>
+            <div class="revenue-item">
+                <div class="revenue-amount" style="color: #3b82f6;">₦{{ item.transfer_total|floatformat:2|default:"0.00" }}</div>
+                <div class="revenue-label">Transfer</div>
+            </div>
+            <div class="revenue-item">
+                <div class="revenue-amount" style="color: #8b5cf6;">₦{{ item.card_total|floatformat:2|default:"0.00" }}</div>
+                <div class="revenue-label">Card</div>
+            </div>
+        </div>
+        
+        <div style="margin: 0.5rem 0; padding: 0.5rem; background: #f8f9fa; border-radius: 8px; text-align: center; border: 1px solid #e0e0e0;">
+            <strong style="color: #333;">Total Revenue:</strong> 
+            <span style="color: #10b981; font-weight: bold; font-size: 1.1rem;">₦{{ item.total_revenue|floatformat:2|default:"0.00" }}</span>
+        </div>
+        
+        <div class="branch-actions">
+            <a href="{% url 'edit_branch' item.branch.id %}" class="btn btn-primary btn-sm">Edit</a>
+            <button onclick="deleteBranch({{ item.branch.id }}, '{{ item.branch.name|escapejs }}')" 
+                    class="btn btn-danger btn-sm">Delete</button>
+            <span class="status-badge {% if item.branch.is_active %}status-active{% else %}status-inactive{% endif %}">
+                {% if item.branch.is_active %}● Active{% else %}○ Inactive{% endif %}
+            </span>
+            
+            {% if user.role == 'admin' or user.is_superuser %}
+                {% if current_branch and current_branch.id == item.branch.id %}
+                    <a href="{% url 'clear_branch_selection' %}" class="switch-link active">
+                        Switch Out
+                    </a>
+                {% else %}
+                    <a href="{% url 'switch_branch' item.branch.id %}" class="switch-link">
+                        Switch In
+                    </a>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-state-icon">🏢</div>
+    <h3>No Branches Yet</h3>
+    <p style="color: #666; margin-bottom: 1.5rem;">Create your first branch to get started with multi-location management.</p>
+    <a href="{% url 'add_branch' %}" class="btn btn-primary" style="display: inline-block; padding: 0.8rem 2rem;">
+        Add Your First Branch
+    </a>
+</div>
+{% endif %}
+
+<script>
+function deleteBranch(branchId, branchName) {
+    showConfirmModal(
+        'Delete Branch',
+        `Are you sure you want to delete branch "<strong>${branchName}</strong>"?<br><br>
+        <span style="color: #dc2626;">⚠️ Warning:</span> This action cannot be undone. All data associated with this branch will be permanently removed.`,
+        async function() {
+            try {
+                const response = await fetch(`/branches/delete/${branchId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast('Branch deleted successfully!', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast(data.error || 'Failed to delete branch', 'error');
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+                showToast('Network error. Please try again.', 'error');
+            }
+        }
+    );
+}
+</script>
+{% endblock %}

@@ -1,0 +1,518 @@
+<!-- debtors/templates/debtors/debtors_list.html -->
+{% extends 'base.html' %}
+
+{% block title %}Debtors{% endblock %}
+
+{% block content %}
+<style>
+    /* ===== MAIN LAYOUT ===== */
+    .debtor-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid #dc2626;
+        transition: all 0.3s;
+    }
+    
+    .debtor-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .debtor-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .debtor-name {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #dc2626;
+    }
+    
+    .debtor-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .summary-item {
+        text-align: center;
+        padding: 0.5rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+    
+    .summary-item .label {
+        font-size: 0.8rem;
+        color: #666;
+        text-transform: uppercase;
+    }
+    
+    .summary-item .value {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #dc2626;
+    }
+    
+    .debtor-actions {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #f0f0f0;
+    }
+    
+    .btn-pay-all {
+        background: #10b981;
+        color: white;
+        padding: 0.5rem 1.5rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .btn-pay-all:hover {
+        background: #059669;
+    }
+    
+    .btn-view {
+        background: #3b82f6;
+        color: white;
+        padding: 0.5rem 1.5rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s;
+    }
+    
+    .btn-view:hover {
+        background: #2563eb;
+    }
+    
+    .btn-secondary {
+        background: #94a3b8;
+        color: white;
+        padding: 0.5rem 1.5rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        cursor: not-allowed;
+    }
+    
+    .sales-list {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #f0f0f0;
+    }
+    
+    .sales-list details {
+        cursor: pointer;
+    }
+    
+    .sales-list summary {
+        font-weight: 500;
+        color: #666;
+        padding: 0.5rem;
+        background: #f8f9fa;
+        border-radius: 6px;
+    }
+    
+    .sales-list summary:hover {
+        background: #e9ecef;
+    }
+    
+    .sale-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .sale-item:last-child {
+        border-bottom: none;
+    }
+    
+    .sale-item .invoice {
+        font-weight: 500;
+        color: #333;
+    }
+    
+    .sale-item .amount {
+        color: #dc2626;
+        font-weight: bold;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 4rem;
+        color: #666;
+    }
+    
+    .empty-state-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+    
+    .search-container {
+        background: #fff;
+        padding: 1rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+        margin-bottom: 1.5rem;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s;
+    }
+    
+    .search-input:focus {
+        border-color: #4f46e5;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+    
+    .search-result-count {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: #4f46e5;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: none;
+    }
+</style>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+    <h1>Debtors</h1>
+    <div style="font-size: 1.1rem; color: #dc2626; font-weight: 600;">
+        Total Debtors: {{ total_debtors }}
+    </div>
+</div>
+
+<!-- Current View Status -->
+<div style="margin-bottom: 1.5rem; padding: 1rem; background: #f0fdf4; border-radius: 8px; border: 1px solid #d1fae5; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <strong style="color: #333;">Current View:</strong> 
+        {% if current_branch %}
+            <span style="color: #10b981; font-weight: bold;">{{ current_branch.name }} ({{ current_branch.code }})</span>
+            <span style="display: inline-block; margin-left: 0.5rem; padding: 0.2rem 0.5rem; background: #10b981; color: white; border-radius: 12px; font-size: 0.7rem; font-weight: 600;">
+                Switched
+            </span>
+        {% else %}
+            <span style="color: #10b981; font-weight: bold;">All Branches</span>
+            <span style="display: inline-block; margin-left: 0.5rem; padding: 0.2rem 0.5rem; background: #3b82f6; color: white; border-radius: 12px; font-size: 0.7rem; font-weight: 600;">
+                Full View
+            </span>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Search Bar -->
+<div class="search-container">
+    <div style="position: relative;">
+        <input type="text" 
+               class="search-input"
+               id="debtorSearchInput"
+               placeholder="Search debtors by name or phone..."
+               value="{{ search_query|default:'' }}"
+               autofocus>
+        <div id="debtorSearchCount" class="search-result-count" style="display: none;"></div>
+    </div>
+    
+    <div class="search-tips" style="margin-top: 0.5rem; font-size: 0.85rem; color: #666; padding: 0.5rem; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #4f46e5;">
+        <small>
+            <strong>Search:</strong> Type customer name or phone number
+        </small>
+    </div>
+</div>
+
+<!-- Debtors List -->
+<div id="debtorsList">
+    {% for debtor in debtors %}
+    <div class="debtor-card" data-customer-name="{{ debtor.customer_name|lower }}" data-customer-phone="{{ debtor.customer_phone }}">
+        <div class="debtor-header">
+            <div>
+                <div class="debtor-name">{{ debtor.customer_name }}</div>
+                <div style="color: #666; font-size: 0.9rem;">{{ debtor.customer_phone }}</div>
+                <div style="font-size: 0.85rem; color: #666; margin-top: 0.3rem;">
+                    {{ debtor.sale_count }} sale{{ debtor.sale_count|pluralize }}
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 0.85rem; color: #666;">Total Balance</div>
+                <div style="font-size: 1.8rem; font-weight: bold; color: #dc2626;">₦{{ debtor.total_balance|floatformat:2 }}</div>
+            </div>
+        </div>
+        
+        <div class="debtor-summary">
+            <div class="summary-item">
+                <div class="label">Total Owed</div>
+                <div class="value">₦{{ debtor.total_owed|floatformat:2 }}</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">Total Paid</div>
+                <div class="value">₦{{ debtor.total_paid|floatformat:2 }}</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">Outstanding</div>
+                <div class="value" style="color: #dc2626;">₦{{ debtor.total_balance|floatformat:2 }}</div>
+            </div>
+        </div>
+        
+        <div class="sales-list">
+            <details>
+                <summary>View Individual Debts ({{ debtor.sale_count }})</summary>
+                <div style="padding: 1rem 0;">
+                    {% for sale in debtor.sales %}
+                    <div class="sale-item">
+                        <div>
+                            <span class="invoice">{{ sale.invoice_number }}</span>
+                            <br><small style="color: #666;">{{ sale.created_at|date:"M d, Y" }}</small>
+                        </div>
+                        <div style="text-align: right;">
+                            <div>Total: ₦{{ sale.total|floatformat:2 }}</div>
+                            <div>Paid: ₦{{ sale.amount_paid|floatformat:2 }}</div>
+                            <div style="color: #dc2626; font-weight: bold;">Balance: ₦{{ sale.balance|floatformat:2 }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </details>
+        </div>
+        
+        <div class="debtor-actions">
+            {% if debtor.customer_phone %}
+                <a href="{% url 'debtor_detail' debtor.customer_phone %}" class="btn-view">
+                    View Details
+                </a>
+            {% else %}
+                <span class="btn-secondary">
+                    No Phone
+                </span>
+            {% endif %}
+            <button onclick="openPayAllModal('{{ debtor.customer_name|escapejs }}', '{{ debtor.customer_phone }}', {{ debtor.total_balance }})" 
+                    class="btn-pay-all">
+                Pay All (₦{{ debtor.total_balance|floatformat:2 }})
+            </button>
+        </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+        <div class="empty-state-icon">💰</div>
+        <h3>No Outstanding Debts</h3>
+        <p>All customers have paid their bills in full!</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pay All Modal -->
+<div id="payAllModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Pay All Debts</h3>
+            <button onclick="closePayAllModal()" class="modal-close-btn">&times;</button>
+        </div>
+        
+        <form id="payAllForm" method="post" action="{% url 'record_bulk_payment' %}">
+            {% csrf_token %}
+            <input type="hidden" id="payAllCustomerName" name="customer_name">
+            <input type="hidden" id="payAllCustomerPhone" name="customer_phone">
+            
+            <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                <h4 style="margin: 0 0 0.5rem 0; color: #333;">Customer</h4>
+                <p style="margin: 0; font-weight: 500;" id="payAllCustomerDisplay"></p>
+                <p style="margin: 0; color: #666;" id="payAllPhoneDisplay"></p>
+            </div>
+            
+            <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                <h4 style="margin: 0 0 0.5rem 0; color: #333;">Payment Details</h4>
+                <div class="form-group">
+                    <label for="payAllAmount">Total Balance</label>
+                    <input type="text" id="payAllAmount" class="form-control" disabled>
+                </div>
+                <div class="form-group">
+                    <label for="payAllPaymentAmount">Amount to Pay *</label>
+                    <input type="number" id="payAllPaymentAmount" name="amount" class="form-control" step="0.01" min="0.01" required placeholder="Enter amount">
+                </div>
+                <div class="form-group">
+                    <label for="payAllMethod">Payment Method *</label>
+                    <select id="payAllMethod" name="payment_method" class="form-control" required>
+                        <option value="cash">Cash</option>
+                        <option value="transfer">Bank Transfer</option>
+                        <option value="card">Card</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="payAllReference">Reference Number</label>
+                    <input type="text" id="payAllReference" name="reference" class="form-control" placeholder="Enter reference number if any">
+                </div>
+                <div class="form-group">
+                    <label for="payAllNotes">Notes</label>
+                    <textarea id="payAllNotes" name="notes" class="form-control" rows="2" placeholder="Optional notes about this payment"></textarea>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="submit" class="btn btn-success" id="payAllSubmitBtn">
+                    Process Payment
+                </button>
+                <button type="button" onclick="closePayAllModal()" class="btn btn-danger">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let debtorDebounceTimer;
+
+document.getElementById('debtorSearchInput').addEventListener('input', function() {
+    clearTimeout(debtorDebounceTimer);
+    debtorDebounceTimer = setTimeout(() => {
+        const searchTerm = this.value.toLowerCase().trim();
+        const cards = document.querySelectorAll('.debtor-card');
+        let visibleCount = 0;
+        
+        cards.forEach(card => {
+            const name = card.dataset.customerName || '';
+            const phone = card.dataset.customerPhone || '';
+            if (name.includes(searchTerm) || phone.includes(searchTerm)) {
+                card.style.display = '';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+        
+        const countElement = document.getElementById('debtorSearchCount');
+        if (searchTerm && visibleCount > 0) {
+            countElement.innerHTML = `<small>${visibleCount} found</small>`;
+            countElement.style.display = 'block';
+        } else if (searchTerm && visibleCount === 0) {
+            countElement.innerHTML = `<small>No results found</small>`;
+            countElement.style.display = 'block';
+        } else {
+            countElement.style.display = 'none';
+        }
+    }, 300);
+});
+
+function openPayAllModal(customerName, customerPhone, totalBalance) {
+    document.getElementById('payAllCustomerName').value = customerName;
+    document.getElementById('payAllCustomerPhone').value = customerPhone;
+    document.getElementById('payAllCustomerDisplay').textContent = customerName;
+    document.getElementById('payAllPhoneDisplay').textContent = customerPhone || 'No phone';
+    document.getElementById('payAllAmount').value = '₦' + parseFloat(totalBalance).toFixed(2);
+    document.getElementById('payAllPaymentAmount').value = parseFloat(totalBalance).toFixed(2);
+    document.getElementById('payAllModal').style.display = 'flex';
+}
+
+function closePayAllModal() {
+    document.getElementById('payAllModal').style.display = 'none';
+    document.getElementById('payAllForm').reset();
+}
+
+document.getElementById('payAllForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const submitBtn = document.getElementById('payAllSubmitBtn');
+    const formData = new FormData(this);
+    const amount = parseFloat(document.getElementById('payAllPaymentAmount').value) || 0;
+    const totalBalance = parseFloat(document.getElementById('payAllAmount').value.replace('₦', '')) || 0;
+    
+    if (amount <= 0) {
+        showToast('Payment amount must be greater than 0', 'error');
+        return;
+    }
+    if (amount > totalBalance) {
+        showToast('Amount cannot exceed total balance', 'error');
+        return;
+    }
+    
+    try {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = 'Processing...';
+        const response = await fetch('/debtors/bulk-payment/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        });
+        if (response.ok) {
+            submitBtn.innerHTML = '✓ Paid!';
+            submitBtn.style.background = '#059669';
+            showToast('Payment recorded successfully!', 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            const data = await response.json();
+            showToast(data.error || 'Failed to record payment', 'error');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'Process Payment';
+            submitBtn.style.background = '#10b981';
+        }
+    } catch (error) {
+        console.error('Payment error:', error);
+        showToast('Network error. Please try again.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Process Payment';
+        submitBtn.style.background = '#10b981';
+    }
+});
+
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => { toast.remove(); }, 3000);
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+document.getElementById('payAllModal').addEventListener('click', function(e) {
+    if (e.target === this) closePayAllModal();
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closePayAllModal();
+});
+</script>
+{% endblock %}

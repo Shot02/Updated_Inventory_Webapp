@@ -1,0 +1,1205 @@
+<!-- dashboard/templates/dashboard/admin_dashboard.html -->
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<style>
+    /* ===== STATISTICS GRID ===== */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        color: #333;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border-left: 4px solid #667eea;
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+    
+    .stat-card h3 {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .stat-card .value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #667eea;
+    }
+    
+    .stat-card .subtext {
+        font-size: 0.85rem;
+        color: #888;
+        margin-top: 0.5rem;
+    }
+    
+    .stat-card.green { border-left-color: #48bb78; }
+    .stat-card.green .value { color: #48bb78; }
+    .stat-card.orange { border-left-color: #ed8936; }
+    .stat-card.orange .value { color: #ed8936; }
+    .stat-card.red { border-left-color: #f56565; }
+    .stat-card.red .value { color: #f56565; }
+    .stat-card.purple { border-left-color: #9f7aea; }
+    .stat-card.purple .value { color: #9f7aea; }
+    .stat-card.teal { border-left-color: #38b2ac; }
+    .stat-card.teal .value { color: #38b2ac; }
+    .stat-card.pink { border-left-color: #ed64a6; }
+    .stat-card.pink .value { color: #ed64a6; }
+    .stat-card.blue { border-left-color: #3b82f6; }
+    .stat-card.blue .value { color: #3b82f6; }
+
+    /* ===== DATE FILTER ===== */
+    .date-filter {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+    
+    .filter-options {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+    
+    .filter-btn {
+        padding: 0.75rem 1.5rem;
+        border: 2px solid #48bb78;
+        background: white;
+        color: #48bb78;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-weight: 500;
+    }
+    
+    .filter-btn:hover {
+        background: #48bb78;
+        color: white;
+    }
+    
+    .filter-btn.active {
+        background: #48bb78;
+        color: white;
+    }
+    
+    .date-input-group {
+        flex: 1;
+        min-width: 200px;
+    }
+    
+    .date-input-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #333;
+    }
+    
+    .date-display {
+        text-align: center;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #48bb78;
+        margin-top: 1rem;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+
+    /* ===== SEARCH ===== */
+    .search-container {
+        background: #fff;
+        padding: 1rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+        margin-bottom: 1.5rem;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s;
+    }
+    
+    .search-input:focus {
+        border-color: #dc2626;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+    .search-result-count {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: #dc2626;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    .search-tips {
+        margin-top: 0.5rem;
+        font-size: 0.85rem;
+        color: #666;
+        padding: 0.5rem;
+        background: #f8f9fa;
+        border-radius: 6px;
+        border-left: 3px solid #dc2626;
+    }
+
+    /* ===== REVENUE CARD ===== */
+    .revenue-card {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 12px;
+        text-align: center;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .revenue-card h2 {
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+        opacity: 0.9;
+    }
+    
+    .revenue-card .amount {
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+
+    /* ===== PROFIT SECTION ===== */
+    .profit-section {
+        margin-bottom: 2rem;
+    }
+    
+    .profit-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .profit-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border-left: 4px solid #10b981;
+        transition: transform 0.3s;
+    }
+    
+    .profit-card:hover {
+        transform: translateY(-3px);
+    }
+    
+    .profit-card h3 {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .profit-card .value {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+    
+    .profit-card .subtext {
+        font-size: 0.85rem;
+        color: #888;
+        margin-top: 0.5rem;
+    }
+    
+    .profit-card.profit { border-left-color: #10b981; }
+    .profit-card.profit .value { color: #10b981; }
+    .profit-card.revenue { border-left-color: #3b82f6; }
+    .profit-card.revenue .value { color: #3b82f6; }
+    .profit-card.cost { border-left-color: #ef4444; }
+    .profit-card.cost .value { color: #ef4444; }
+    .profit-card.margin { border-left-color: #8b5cf6; }
+    .profit-card.margin .value { color: #8b5cf6; }
+
+    /* ===== TABLE ===== */
+    .table-container {
+        overflow-x: auto;
+        margin-bottom: 1rem;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: #666;
+    }
+    
+    .badge {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        border-radius: 8px;
+        font-weight: 600;
+        display: inline-block;
+    }
+    
+    .badge-success { background: #d1fae5; color: #065f46; }
+    .badge-warning { background: #fef3c7; color: #92400e; }
+    .badge-danger  { background: #fee2e2; color: #b91c1c; }
+    .badge-info { background: #e0f2fe; color: #0369a1; }
+    .badge-secondary { background: #f1f5f9; color: #475569; }
+
+    /* ===== CHART CONTAINER ===== */
+    .chart-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .chart-container h3 {
+        color: #333;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .profit-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .filter-options {
+            flex-direction: column;
+        }
+        
+        .filter-btn {
+            width: 100%;
+            text-align: center;
+        }
+        
+        .revenue-card .amount {
+            font-size: 2rem;
+        }
+    }
+</style>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+    <h1>Admin Dashboard</h1>
+    <div style="font-size: 1.1rem; color: #b91c1c; font-weight: 600;">
+        {% if date_filter == 'today' %}
+            Today's Report
+        {% elif date_filter == 'week' %}
+            Weekly Report ({{ start_date|date:"M d" }} - {{ end_date|date:"M d, Y" }})
+        {% elif date_filter == 'month' %}
+            Monthly Report ({{ start_date|date:"F Y" }})
+        {% elif date_filter == 'year' %}
+            Yearly Report ({{ start_date|date:"Y" }})
+        {% else %}
+            Custom Report ({{ start_date|date:"M d, Y" }} - {{ end_date|date:"M d, Y" }})
+        {% endif %}
+    </div>
+</div>
+
+<!-- Current View Status -->
+<div style="margin-bottom: 1.5rem; padding: 1rem; background: #f0fdf4; border-radius: 8px; border: 1px solid #d1fae5; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <strong style="color: #333;">Current View:</strong> 
+        {% if current_branch %}
+            <span style="color: #10b981; font-weight: bold;">{{ current_branch.name }} ({{ current_branch.code }})</span>
+            <span style="display: inline-block; margin-left: 0.5rem; padding: 0.2rem 0.5rem; background: #10b981; color: white; border-radius: 12px; font-size: 0.7rem; font-weight: 600;">
+                Switched
+            </span>
+        {% else %}
+            <span style="color: #10b981; font-weight: bold;">All Branches</span>
+            <span style="display: inline-block; margin-left: 0.5rem; padding: 0.2rem 0.5rem; background: #3b82f6; color: white; border-radius: 12px; font-size: 0.7rem; font-weight: 600;">
+                Full View
+            </span>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Date Filter Section -->
+<div class="date-filter">
+    <h3 style="margin-bottom: 1rem;">Filter by Date Range</h3>
+    
+    <form id="dateFilterForm" method="get">
+        <div class="filter-options">
+            <button type="button" class="filter-btn {% if date_filter == 'today' %}active{% endif %}" onclick="setDateFilter('today')">
+                Today
+            </button>
+            <button type="button" class="filter-btn {% if date_filter == 'week' %}active{% endif %}" onclick="setDateFilter('week')">
+                This Week
+            </button>
+            <button type="button" class="filter-btn {% if date_filter == 'month' %}active{% endif %}" onclick="setDateFilter('month')">
+                This Month
+            </button>
+            <button type="button" class="filter-btn {% if date_filter == 'year' %}active{% endif %}" onclick="setDateFilter('year')">
+                This Year
+            </button>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; align-items: end; margin-top: 1.5rem;">
+            <div class="date-input-group">
+                <label>Start Date</label>
+                <input type="date" id="startDate" name="custom_start" value="{{ start_date|date:'Y-m-d' }}" class="form-control">
+            </div>
+            <div class="date-input-group">
+                <label>End Date</label>
+                <input type="date" id="endDate" name="custom_end" value="{{ end_date|date:'Y-m-d' }}" class="form-control">
+            </div>
+            <div>
+                <button type="submit" class="btn btn-primary">Apply Date Range</button>
+            </div>
+        </div>
+        
+        <!-- Hidden fields -->
+        <input type="hidden" id="dateFilter" name="date_filter" value="{{ date_filter }}">
+        <input type="hidden" name="sales_search" value="{{ sales_search|default:'' }}">
+        <input type="hidden" name="stock_search" value="{{ stock_search|default:'' }}">
+    </form>
+    
+    <div class="date-display">
+        {% if date_filter == 'today' %}
+            Showing data for: <strong>{{ start_date|date:"F d, Y" }}</strong>
+        {% elif date_filter == 'week' %}
+            Week of: <strong>{{ start_date|date:"F d" }} - {{ end_date|date:"F d, Y" }}</strong>
+        {% elif date_filter == 'month' %}
+            Month of: <strong>{{ start_date|date:"F Y" }}</strong>
+        {% elif date_filter == 'year' %}
+            Year: <strong>{{ start_date|date:"Y" }}</strong>
+        {% else %}
+            Custom Period: <strong>{{ start_date|date:"M d, Y" }} to {{ end_date|date:"M d, Y" }}</strong>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Statistics Grid -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <h3>Total Products</h3>
+        <div class="value">{{ total_products }}</div>
+        <div class="subtext">Active inventory items</div>
+    </div>
+    
+    <div class="stat-card green">
+        <h3>Total Sales</h3>
+        <div class="value">{{ total_sales }}</div>
+        <div class="subtext">Transactions this period</div>
+    </div>
+    
+    <div class="stat-card orange">
+        <h3>Low Stock Items</h3>
+        <div class="value">{{ low_stock_products }}</div>
+        <div class="subtext">Need reordering</div>
+    </div>
+    
+    <div class="stat-card red">
+        <h3>Debtors</h3>
+        <div class="value">{{ debtors_count }}</div>
+        <div class="subtext">Outstanding balances</div>
+    </div>
+    
+    <div class="stat-card purple">
+        <h3>Cash Payments</h3>
+        <div class="value">₦{{ cash_payments|floatformat:2 }}</div>
+        <div class="subtext">This period</div>
+    </div>
+    
+    <div class="stat-card teal">
+        <h3>Transfer Payments</h3>
+        <div class="value">₦{{ transfer_payments|floatformat:2 }}</div>
+        <div class="subtext">This period</div>
+    </div>
+    
+    <div class="stat-card pink">
+        <h3>Card Payments</h3>
+        <div class="value">₦{{ card_payments|floatformat:2 }}</div>
+        <div class="subtext">This period</div>
+    </div>
+
+    <div class="stat-card teal">
+        <h3>Today's Refunds</h3>
+        <div class="value" id="todayRefunds">₦{{ today_refunds|floatformat:2 }}</div>
+        <div class="subtext">Processed today</div>
+    </div>
+
+    <div class="stat-card pink">
+        <h3>Pending Refunds</h3>
+        <div class="value" id="pendingRefunds">{{ pending_refunds }}</div>
+        <div class="subtext">Awaiting approval</div>
+    </div>
+</div>
+
+<!-- Expiry Alerts Section -->
+<div class="card" style="margin-top: 2rem;">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="color: #dc2626;">Product Expiry Alerts</h2>
+        <div>
+            <span class="badge badge-danger" style="background: #dc2626;">{{ expired_count|default:0 }} Expired</span>
+            <span class="badge badge-warning">{{ expiring_soon_count|default:0 }} Expiring Soon</span>
+        </div>
+    </div>
+    
+    <div style="overflow-x: auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>SKU</th>
+                    <th>Supplier</th>
+                    <th>Batch</th>
+                    <th>Expiry Date</th>
+                    <th>Days Left</th>
+                    <th>Stock</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in expired %}
+                <tr style="background: #fee2e2;">
+                    <td><strong>{{ product.name }}</strong></td>
+                    <td><code>{{ product.sku }}</code></td>
+                    <td>{{ product.supplier.name|default:"-" }}</td>
+                    <td>{{ product.batch_number|default:"-" }}</td>
+                    <td>{{ product.expiry_date|date:"d/m/Y" }}</td>
+                    <td><span class="badge badge-danger">{{ product.days_until_expiry }} days</span></td>
+                    <td>{{ product.quantity }}</td>
+                    <td><span class="badge badge-danger">EXPIRED</span></td>
+                    <td>
+                        <a href="{% url 'edit_product' product.id %}" class="btn btn-warning btn-sm">Review</a>
+                    </td>
+                </tr>
+                {% endfor %}
+                
+                {% for product in expiring_soon %}
+                <tr style="background: #fef3c7;">
+                    <td><strong>{{ product.name }}</strong></td>
+                    <td><code>{{ product.sku }}</code></td>
+                    <td>{{ product.supplier.name|default:"-" }}</td>
+                    <td>{{ product.batch_number|default:"-" }}</td>
+                    <td>{{ product.expiry_date|date:"d/m/Y" }}</td>
+                    <td><span class="badge badge-warning">{{ product.days_until_expiry }} days</span></td>
+                    <td>{{ product.quantity }}</td>
+                    <td><span class="badge badge-warning">Expiring Soon</span></td>
+                    <td>
+                        <a href="{% url 'edit_product' product.id %}" class="btn btn-primary btn-sm">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+                
+                {% if not expired and not expiring_soon %}
+                <tr>
+                    <td colspan="9" style="text-align: center; padding: 2rem;">
+                        <div style="color: #10b981;">✅ All products have valid expiry dates</div>
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Total Revenue Card -->
+<div class="revenue-card">
+    <h2>Total Revenue ({{ date_filter|title }})</h2>
+    <div class="amount">₦{{ total_revenue|floatformat:2 }}</div>
+    <div style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.8;">
+        Actual payments received
+    </div>
+</div>
+
+<!-- Profit Analysis Section -->
+<div class="profit-section">
+    <!-- Profit Stats Grid -->
+    <div class="profit-grid">
+        <!-- Total Profit Card -->
+        <div class="profit-card profit">
+            <h3>Profit</h3>
+            <div class="value">₦{{ total_profit|floatformat:2 }}</div>
+            <div class="subtext">What you keep after costs</div>
+        </div>
+        
+        <!-- Revenue Card -->
+        <div class="profit-card revenue">
+            <h3>Sales Revenue</h3>
+            <div class="value">₦{{ total_revenue_from_sales|floatformat:2 }}</div>
+            <div class="subtext">Before costs</div>
+        </div>
+        
+        <!-- Cost of Goods Card -->
+        <div class="profit-card cost">
+            <h3>Cost of Products</h3>
+            <div class="value">₦{{ total_cost_of_goods|floatformat:2 }}</div>
+            <div class="subtext">What you paid</div>
+        </div>
+        
+        <!-- Profit Margin Card -->
+        <div class="profit-card margin">
+            <h3>Profit Margin</h3>
+            <div class="value">{{ profit_margin|floatformat:1 }}%</div>
+            <div class="subtext">Efficiency</div>
+        </div>
+    </div>
+    
+    <!-- Profit by Payment Method -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+        <div class="card-header">
+            <h3>Profit by Payment Method</h3>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; padding: 1rem;">
+            <div style="text-align: center;">
+                <h4 style="color: #666; margin-bottom: 0.5rem;">Cash</h4>
+                <div style="font-size: 1.5rem; font-weight: bold; color: #10b981;">
+                    ₦{{ profit_by_payment.cash|floatformat:2 }}
+                </div>
+            </div>
+            <div style="text-align: center;">
+                <h4 style="color: #666; margin-bottom: 0.5rem;">Transfer</h4>
+                <div style="font-size: 1.5rem; font-weight: bold; color: #3b82f6;">
+                    ₦{{ profit_by_payment.transfer|floatformat:2 }}
+                </div>
+            </div>
+            <div style="text-align: center;">
+                <h4 style="color: #666; margin-bottom: 0.5rem;">Card</h4>
+                <div style="font-size: 1.5rem; font-weight: bold; color: #8b5cf6;">
+                    ₦{{ profit_by_payment.card|floatformat:2 }}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Profitable Products -->
+    {% if top_profitable_products %}
+    <div class="card">
+        <div class="card-header">
+            <h3>Top 5 Most Profitable Products</h3>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>SKU</th>
+                        <th>Quantity Sold</th>
+                        <th>Revenue</th>
+                        <th>Cost</th>
+                        <th>Profit</th>
+                        <th>Margin</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in top_profitable_products %}
+                    <tr>
+                        <td><strong>{{ product.name }}</strong></td>
+                        <td><code>{{ product.sku }}</code></td>
+                        <td>{{ product.quantity_sold }}</td>
+                        <td>₦{{ product.revenue|floatformat:2 }}</td>
+                        <td>₦{{ product.cost|floatformat:2 }}</td>
+                        <td style="color: #10b981; font-weight: bold;">₦{{ product.profit|floatformat:2 }}</td>
+                        <td>
+                            {% if product.revenue > 0 %}
+                                {% widthratio product.profit product.revenue 100 %}%
+                            {% else %}
+                                0%
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Recent Sales Section -->
+<div class="card">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h2>Recent Sales</h2>
+        <div id="salesSearchResultCount">
+            {% if recent_sales|length > 0 %}
+                <span class="badge" style="background:#e0e7ff; color:#3730a3;">
+                    {{ recent_sales|length }} sales
+                </span>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Search Bar for Recent Sales -->
+    <div class="search-container">
+        <div style="position: relative;">
+            <input type="text" 
+                   class="search-input"
+                   id="salesSearchInput"
+                   placeholder="Type to search sales... (invoice, customer, staff)"
+                   value="{{ sales_search|default:'' }}">
+            <div id="salesSearchCount" class="search-result-count" style="display: none;"></div>
+        </div>
+        
+        <div class="search-tips">
+            <small>
+                Search: Type invoice number, customer name, phone, or staff username
+            </small>
+        </div>
+    </div>
+    
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Invoice</th>
+                    <th>Customer</th>
+                    <th>Staff</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    {% if viewing_all_branches %}
+                    <th>Branch</th>
+                    {% endif %}
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="salesTableBody">
+                {% for sale in recent_sales %}
+                <tr>
+                    <td><strong>{{ sale.invoice_number }}</strong></td>
+                    <td>{{ sale.customer_name|default:"-" }}</td>
+                    <td>
+                        {% if sale.staff %}
+                            {{ sale.staff.get_full_name|default:sale.staff.username }}
+                        {% else %}
+                            No staff assigned
+                        {% endif %}
+                    </td>
+                    <td>₦{{ sale.total|floatformat:2 }}</td>
+                    <td>
+                        {% if sale.payment_status == 'paid' %}
+                        <span class="badge badge-success">Paid</span>
+                        {% elif sale.payment_status == 'partial' %}
+                        <span class="badge badge-warning">Partial</span>
+                        {% else %}
+                        <span class="badge badge-danger">Unpaid</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ sale.created_at|date:"M d, H:i" }}</td>
+                    {% if viewing_all_branches %}
+                    <td>
+                        {% if sale.branch %}
+                            <span class="badge badge-info">{{ sale.branch.name }}</span>
+                        {% else %}
+                            <span class="badge badge-secondary">No Branch</span>
+                        {% endif %}
+                    </td>
+                    {% endif %}
+                    <td>
+                        <a href="{% url 'view_receipt' sale.id %}" class="btn btn-primary btn-sm">
+                            View
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 2rem;">
+                        <div class="empty-state">
+                            <h3>No Sales Yet</h3>
+                            <p>No sales recorded for this period</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Low Stock Alert Section -->
+<div class="card">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h2>Low Stock Alert</h2>
+        <div id="stockSearchResultCount">
+            {% if low_stock|length > 0 %}
+                <span class="badge badge-warning">{{ low_stock|length }} items</span>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Search Bar for Low Stock -->
+    <div class="search-container">
+        <div style="position: relative;">
+            <input type="text" 
+                   class="search-input"
+                   id="stockSearchInput"
+                   placeholder="Type to search low stock products... (name, SKU, category)"
+                   value="{{ stock_search|default:'' }}">
+            <div id="stockSearchCount" class="search-result-count" style="display: none;"></div>
+        </div>
+        
+        <div class="search-tips">
+            <small>
+                Search: Type product name, SKU, or category
+            </small>
+        </div>
+    </div>
+    
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>SKU</th>
+                    <th>Category</th>
+                    <th>Current Stock</th>
+                    <th>Reorder Level</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="stockTableBody">
+                {% for product in low_stock %}
+                <tr>
+                    <td><strong>{{ product.name }}</strong></td>
+                    <td><code>{{ product.sku }}</code></td>
+                    <td>{{ product.category.name|default:"N/A" }}</td>
+                    <td><span class="badge badge-danger">{{ product.quantity }}</span></td>
+                    <td>{{ product.reorder_level }}</td>
+                    <td>
+                        <a href="{% url 'edit_product' product.id %}" class="btn btn-warning btn-sm">
+                            Restock
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 2rem;">
+                        <div class="empty-state">
+                            <h3>All Products Well Stocked!</h3>
+                            <p>No low stock items at this time</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Profit Chart Section -->
+<div id="profitChartContainer" class="chart-container">
+    <h3>Daily Profit Trend</h3>
+    <div style="height: 300px;">
+        <canvas id="profitChart"></canvas>
+    </div>
+</div>
+
+<script>
+// =================== DATE FILTER FUNCTIONS ===================
+function setDateFilter(filter) {
+    document.getElementById('dateFilter').value = filter;
+    document.getElementById('dateFilterForm').submit();
+}
+
+// =================== SEARCH FUNCTIONS ===================
+let debounceTimer;
+
+function debounceSearch(type, value) {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+        performRealTimeSearch(type, value);
+    }, 300);
+}
+
+async function performRealTimeSearch(type, searchTerm) {
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const dateFilter = urlParams.get('date_filter') || '{{ date_filter }}';
+        const customStart = urlParams.get('custom_start') || '{{ start_date|date:"Y-m-d" }}';
+        const customEnd = urlParams.get('custom_end') || '{{ end_date|date:"Y-m-d" }}';
+        
+        let searchUrl = `/dashboard/api/search/${type}/?q=${encodeURIComponent(searchTerm)}`;
+        searchUrl += `&date_filter=${dateFilter}`;
+        searchUrl += `&custom_start=${customStart}`;
+        searchUrl += `&custom_end=${customEnd}`;
+        
+        const response = await fetch(searchUrl);
+        const data = await response.json();
+        
+        if (data.success) {
+            updateTable(type, data.results);
+            updateSearchCount(type, data.count);
+        }
+    } catch (error) {
+        console.error('Search error:', error);
+    }
+}
+
+function updateTable(type, results) {
+    const tableBody = document.getElementById(type + 'TableBody');
+    
+    if (type === 'sales') {
+        if (results.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 2rem;">
+                        <div class="empty-state">
+                            <h3>No Sales Found</h3>
+                            <p>No sales match your search criteria</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        let rowsHtml = '';
+        results.forEach(sale => {
+            let statusBadge = '';
+            if (sale.payment_status === 'paid') {
+                statusBadge = '<span class="badge badge-success">Paid</span>';
+            } else if (sale.payment_status === 'partial') {
+                statusBadge = '<span class="badge badge-warning">Partial</span>';
+            } else {
+                statusBadge = '<span class="badge badge-danger">Unpaid</span>';
+            }
+            
+            const date = new Date(sale.created_at);
+            const formattedDate = date.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            rowsHtml += `
+                <tr>
+                    <td><strong>${sale.invoice_number}</strong></td>
+                    <td>${sale.customer_name || 'Walk-in'}</td>
+                    <td>${sale.staff_name}</td>
+                    <td>₦${parseFloat(sale.total).toFixed(2)}</td>
+                    <td>${statusBadge}</td>
+                    <td>${formattedDate}</td>
+                    <td>
+                        <a href="/sales/receipt/${sale.id}/" class="btn btn-primary btn-sm">
+                            View
+                        </a>
+                    </td>
+                </tr>
+            `;
+        });
+        tableBody.innerHTML = rowsHtml;
+        
+    } else if (type === 'stock') {
+        if (results.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 2rem;">
+                        <div class="empty-state">
+                            <h3>No Low Stock Items</h3>
+                            <p>No products match your search</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        let rowsHtml = '';
+        results.forEach(product => {
+            rowsHtml += `
+                <tr>
+                    <td><strong>${product.name}</strong></td>
+                    <td><code>${product.sku}</code></td>
+                    <td>${product.category || 'N/A'}</td>
+                    <td><span class="badge badge-danger">${product.quantity}</span></td>
+                    <td>${product.reorder_level}</td>
+                    <td>
+                        <a href="/products/edit/${product.id}/" class="btn btn-warning btn-sm">
+                            Restock
+                        </a>
+                    </td>
+                </tr>
+            `;
+        });
+        tableBody.innerHTML = rowsHtml;
+    }
+}
+
+function updateSearchCount(type, count) {
+    const countElement = document.getElementById(type + 'SearchCount');
+    const resultCountElement = document.getElementById(type + 'SearchResultCount');
+    
+    if (countElement) {
+        if (count > 0) {
+            countElement.innerHTML = `<small>${count} found</small>`;
+            countElement.style.display = 'block';
+        } else {
+            countElement.style.display = 'none';
+        }
+    }
+    
+    if (resultCountElement) {
+        if (count > 0) {
+            resultCountElement.innerHTML = `<span class="badge" style="background:#e0e7ff; color:#3730a3;">${count} results</span>`;
+        } else {
+            resultCountElement.innerHTML = '<span class="badge badge-warning">No results</span>';
+        }
+    }
+}
+
+// =================== REFUND STATS ===================
+async function loadRefundStats() {
+    try {
+        const response = await fetch('/refunds/api/refund-stats/');
+        const data = await response.json();
+        document.getElementById('todayRefunds').textContent = `₦${data.today_refunds.toFixed(2)}`;
+        document.getElementById('pendingRefunds').textContent = data.pending_requests;
+    } catch (error) {
+        console.error('Error loading refund stats:', error);
+    }
+}
+
+// =================== MARK NOTIFICATIONS READ ===================
+document.addEventListener('DOMContentLoaded', function() {
+    const unreadCount = parseInt(document.body.dataset.unreadDashboardCount || '0');
+    if (unreadCount > 0) {
+        fetch('/dashboard/mark-notifications-read/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                notification_type: 'dashboard'
+            })
+        });
+    }
+    loadRefundStats();
+});
+
+// =================== SEARCH INPUTS ===================
+document.addEventListener('DOMContentLoaded', function() {
+    const salesSearchInput = document.getElementById('salesSearchInput');
+    const stockSearchInput = document.getElementById('stockSearchInput');
+    
+    if (salesSearchInput) {
+        salesSearchInput.addEventListener('input', function(e) {
+            debounceSearch('sales', this.value);
+        });
+        salesSearchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                this.value = '';
+                debounceSearch('sales', '');
+            }
+        });
+    }
+    
+    if (stockSearchInput) {
+        stockSearchInput.addEventListener('input', function(e) {
+            debounceSearch('stock', this.value);
+        });
+        stockSearchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                this.value = '';
+                debounceSearch('stock', '');
+            }
+        });
+    }
+});
+
+// =================== PROFIT CHART ===================
+async function loadProfitChart() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const dateFilter = urlParams.get('date_filter') || '{{ date_filter }}';
+    const customStart = urlParams.get('custom_start') || '{{ start_date|date:"Y-m-d" }}';
+    const customEnd = urlParams.get('custom_end') || '{{ end_date|date:"Y-m-d" }}';
+    
+    try {
+        const response = await fetch(`/dashboard/api/profit-stats/?date_filter=${dateFilter}&custom_start=${customStart}&custom_end=${customEnd}`);
+        const data = await response.json();
+        if (data.success && data.daily_profit && data.daily_profit.length > 0) {
+            createProfitChart(data.daily_profit);
+        } else {
+            document.getElementById('profitChartContainer').style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error loading profit chart:', error);
+        document.getElementById('profitChartContainer').style.display = 'none';
+    }
+}
+
+function createProfitChart(dailyData) {
+    if (typeof Chart === 'undefined') {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+        script.onload = function() {
+            renderChart(dailyData);
+        };
+        document.head.appendChild(script);
+    } else {
+        renderChart(dailyData);
+    }
+}
+
+function renderChart(dailyData) {
+    const ctx = document.getElementById('profitChart').getContext('2d');
+    
+    const labels = dailyData.map(d => {
+        const date = new Date(d.date);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    });
+    
+    const revenueData = dailyData.map(d => d.revenue);
+    const costData = dailyData.map(d => d.cost);
+    const profitData = dailyData.map(d => d.profit);
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Revenue',
+                    data: revenueData,
+                    backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                    borderColor: 'rgb(59, 130, 246)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Cost',
+                    data: costData,
+                    backgroundColor: 'rgba(239, 68, 68, 0.5)',
+                    borderColor: 'rgb(239, 68, 68)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Profit',
+                    data: profitData,
+                    type: 'line',
+                    fill: false,
+                    borderColor: 'rgb(16, 185, 129)',
+                    backgroundColor: 'rgb(16, 185, 129)',
+                    tension: 0.1,
+                    borderWidth: 3,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Daily Revenue, Cost & Profit'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += '₦' + context.parsed.y.toFixed(2);
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Amount (₦)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return '₦' + value.toFixed(0);
+                        }
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    grid: {
+                        drawOnChartArea: false,
+                    },
+                    title: {
+                        display: true,
+                        text: 'Profit (₦)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return '₦' + value.toFixed(0);
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Load profit chart on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadProfitChart();
+});
+
+// =================== COOKIE HELPER ===================
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,1292 @@
+<!-- sales/templates/sales/home.html -->
+{% extends 'base.html' %}
+
+{% block title %}Point of Sale{% endblock %}
+
+{% block extra_css %}
+<style>
+    .pos-container {
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: 1.5rem;
+    }
+    
+    .search-section {
+        margin-bottom: 1.5rem;
+    }
+    
+    .search-box {
+        position: relative;
+    }
+    
+    .search-box input {
+        font-size: 1.1rem;
+        padding: 1rem;
+        width: 100%;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+    }
+    
+    .search-results {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 2px solid #48bb78;
+        border-top: none;
+        max-height: 300px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .search-result-item {
+        padding: 1rem;
+        border-bottom: 1px solid #eee;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .search-result-item:hover {
+        background: #f8f9fa;
+    }
+
+    .search-result-item.selected {
+        background: #e6fffa;
+        outline: 2px solid #10b981;
+        outline-offset: -2px;
+    }
+    
+    .search-result-item img {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 6px;
+    }
+    
+    .search-result-item.out-of-stock {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: #ffebee;
+    }
+    
+    .cart-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .cart-table th,
+    .cart-table td {
+        padding: 1rem;
+        text-align: left;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .cart-table th {
+        background: #f8f9fa;
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .cart-table img {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 6px;
+    }
+    
+    .cart-summary {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-top: 1rem;
+    }
+    
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
+    }
+    
+    .summary-row.total {
+        font-size: 1.5rem;
+        font-weight: bold;
+        border-top: 2px solid rgba(255,255,255,0.3);
+        padding-top: 0.5rem;
+        margin-top: 0.5rem;
+    }
+    
+    .quantity-control {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .quantity-control button {
+        width: 30px;
+        height: 30px;
+        border: none;
+        background: rgba(16, 185, 129, 0.3);
+        color: white;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+    
+    .quantity-control input {
+        width: 60px;
+        text-align: center;
+        padding: 0.3rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    
+    .stock-badge {
+        display: inline-block;
+        padding: 0.2rem 0.6rem;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+    
+    .stock-badge.in-stock {
+        background: #c6f6d5;
+        color: #22543d;
+    }
+    
+    .stock-badge.low-stock {
+        background: #fef08a;
+        color: #713f12;
+    }
+    
+    .stock-badge.out-of-stock {
+        background: #fed7d7;
+        color: #742a2a;
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+    }
+    
+    .payment-type-options {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .payment-type-option {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+        background: #f8f9fa;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+        flex: 1;
+        text-align: center;
+        justify-content: center;
+    }
+    
+    .payment-type-option:hover {
+        background: #e9ecef;
+    }
+    
+    .payment-type-option.active {
+        background: #48bb78;
+        color: white;
+        border-color: #48bb78;
+    }
+    
+    .payment-type-option input {
+        margin: 0;
+        display: none;
+    }
+    
+    .payment-methods-container {
+        margin-bottom: 1.5rem;
+    }
+    
+    .payment-methods-list {
+        margin-top: 1rem;
+    }
+    
+    .payment-entry {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr auto;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+        padding: 0.5rem;
+        background: #f8f9fa;
+        border-radius: 6px;
+        align-items: center;
+    }
+    
+    .payment-entry select,
+    .payment-entry input {
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    
+    .payment-entry .remove-payment {
+        color: #dc3545;
+        cursor: pointer;
+        font-size: 1.2rem;
+        padding: 0 0.5rem;
+    }
+    
+    .payment-entry .remove-payment:hover {
+        color: #b91c1c;
+    }
+    
+    .add-payment-btn {
+        margin-top: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: #10b981;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .add-payment-btn:hover {
+        background: #059669;
+    }
+    
+    .payment-total-display {
+        margin-top: 1rem;
+        padding: 0.75rem;
+        background: #f0fdf4;
+        border-radius: 6px;
+        border: 1px solid #10b981;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .payment-total-display .total-label {
+        font-weight: 500;
+        color: #333;
+    }
+    
+    .payment-total-display .total-amount {
+        font-weight: bold;
+        color: #10b981;
+        font-size: 1.2rem;
+    }
+    
+    .payment-total-display .remaining {
+        color: #dc3545;
+    }
+
+    .btn-action {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .save-cart-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 2000;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .save-cart-modal .modal-content {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        width: 400px;
+        max-width: 90%;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    
+    @media (max-width: 1024px) {
+        .pos-container {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .payment-entry {
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+        
+        .payment-entry .remove-payment {
+            grid-column: span 2;
+            text-align: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Save Cart Modal -->
+<div id="saveCartModal" class="save-cart-modal">
+    <div class="modal-content">
+        <div class="global-modal-title">
+            <h3 style="margin: 0;">Save Cart</h3>
+            <button onclick="closeSaveCartModal()" class="global-modal-close">&times;</button>
+        </div>
+        <div class="form-group">
+            <label>Cart Name</label>
+            <input type="text" id="cartNameInput" class="form-control" 
+                   placeholder="Enter cart name" value="Cart from {{ now|date:'M d, Y H:i' }}">
+        </div>
+        <div class="global-modal-buttons">
+            <button onclick="saveCart()" class="btn btn-success" style="flex: 1;">Save</button>
+            <button onclick="closeSaveCartModal()" class="btn btn-danger">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div class="pos-container">
+    <div class="left-panel">
+        <div class="card">
+            <div class="card-header">
+                <h2>Point of Sale</h2>
+            </div>
+            
+            <div class="search-section">
+                <div class="search-box">
+                    <input type="text" id="productSearch" class="form-control" 
+                           placeholder="Search product by name or SKU..." autofocus>
+                    <div id="searchResults" class="search-results"></div>
+                </div>
+            </div>
+            
+            <div id="cartSection">
+                <table class="cart-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Price</th>
+                            <th>Quantity</th>
+                            <th>Discount</th>
+                            <th>Total</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cartItems">
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 2rem;">
+                                <p style="color: #999;">Cart is empty. Search for products to add.</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="right-panel">
+        <div class="card">
+            <div class="card-header">
+                <h2>Checkout</h2>
+            </div>
+            
+            <div class="form-group">
+                <label>Payment Type</label>
+                <div class="payment-type-options">
+                    <label class="payment-type-option active" onclick="selectPaymentType('full')">
+                        Full Payment
+                    </label>
+                    <label class="payment-type-option" onclick="selectPaymentType('installment')">
+                        Installment Payment
+                    </label>
+                </div>
+            </div>
+            
+            <div id="customerInfoSection" style="display: block;">
+                <div class="form-group">
+                    <label>Customer Name </label>
+                    <input type="text" id="customerName" class="form-control" 
+                        placeholder="Enter customer name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Customer Phone (Optional)</label>
+                    <input type="tel" id="customerPhone" class="form-control" 
+                        placeholder="Enter phone number (optional)">
+                </div>
+            </div>
+            
+            <div class="cart-summary">
+                <div class="summary-row">
+                    <span>Subtotal:</span>
+                    <span id="subtotal">₦0.00</span>
+                </div>
+                <div class="summary-row">
+                    <span>Discount:</span>
+                    <span id="totalDiscount">₦0.00</span>
+                </div>
+                <div class="summary-row total">
+                    <span>GRAND TOTAL:</span>
+                    <span id="grandTotal">₦0.00</span>
+                </div>
+            </div>
+            
+            <div class="payment-methods-container">
+                <label style="font-weight: 500; display: block; margin-bottom: 0.5rem;">Payment Methods</label>
+                
+                <div id="paymentMethodsList" class="payment-methods-list">
+                    <div class="payment-entry" data-payment-id="1">
+                        <select name="payment_method" class="payment-method-select" onchange="updatePaymentTotal()">
+                            <option value="cash">Cash</option>
+                            <option value="transfer">Bank Transfer</option>
+                            <option value="card">Card</option>
+                        </select>
+                        <input type="number" name="payment_amount" class="payment-amount-input" 
+                               step="0.01" min="0" value="0" placeholder="Amount" 
+                               oninput="updatePaymentTotal()">
+                        <span class="remove-payment" onclick="removePaymentEntry(this)" style="display: none;">×</span>
+                    </div>
+                </div>
+                
+                <button type="button" class="add-payment-btn" onclick="addPaymentEntry()">
+                    + Add Another Payment Method
+                </button>
+                
+                <div class="payment-total-display">
+                    <span class="total-label">Total Paid:</span>
+                    <span class="total-amount" id="totalPaidDisplay">₦0.00</span>
+                    <span class="remaining" id="remainingBalanceDisplay">Remaining: ₦0.00</span>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                <button onclick="processSale()" class="btn btn-success" style="flex: 1;">
+                    Complete Sale
+                </button>
+                <button onclick="clearCart()" class="btn btn-danger">
+                    Clear
+                </button>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button onclick="openSaveCartModal()" class="btn btn-warning" style="flex: 1;">
+                    Save Cart
+                </button>
+                <a href="{% url 'saved_carts_list' %}" class="btn btn-info" style="flex: 1;">
+                    Saved Carts
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ========== GLOBAL CART VARIABLES ==========
+let cart = [];
+let searchTimeout;
+let paymentCounter = 1;
+let currentSearchResults = [];
+let selectedSearchIndex = -1;
+
+// ========== INITIALIZATION ==========
+document.addEventListener('DOMContentLoaded', function() {
+    selectPaymentType('full');
+    updatePaymentTotal();
+    
+    // Check for saved cart to load
+    const cartToLoad = sessionStorage.getItem('cartToLoad');
+    if (cartToLoad && cart.length === 0) {
+        try {
+            const cartData = JSON.parse(cartToLoad);
+            loadCartData(cartData.data);
+        } catch (error) {
+            console.error('Error loading cart from storage:', error);
+            sessionStorage.removeItem('cartToLoad');
+        }
+    }
+});
+
+// ========== PRODUCT SEARCH ==========
+document.getElementById('productSearch').addEventListener('input', function(e) {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        if (this.value.trim()) {
+            searchProducts(this.value.trim());
+        } else {
+            clearSearchResults();
+        }
+    }, 300);
+});
+
+document.getElementById('productSearch').addEventListener('keydown', function(e) {
+    const visibleResults = currentSearchResults
+        .map((product, index) => ({ product, index }))
+        .filter(result => result.product.quantity > 0);
+
+    if (!visibleResults.length) return;
+
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        moveSearchSelection(1, visibleResults);
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        moveSearchSelection(-1, visibleResults);
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
+        selectSearchProduct(selectedSearchIndex);
+    }
+});
+
+function getStockBadge(quantity) {
+    if (quantity === 0) {
+        return '<span class="stock-badge out-of-stock">OUT OF STOCK</span>';
+    } else if (quantity <= 10) {
+        return '<span class="stock-badge low-stock">LOW STOCK (' + quantity + ')</span>';
+    } else {
+        return '<span class="stock-badge in-stock">IN STOCK (' + quantity + ')</span>';
+    }
+}
+
+async function searchProducts(query) {
+    try {
+        const response = await fetch(`/sales/api/search-products/?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        
+        const products = data.results || [];
+        
+        const resultsDiv = document.getElementById('searchResults');
+        currentSearchResults = products;
+        selectedSearchIndex = products.findIndex(product => product.quantity > 0);
+        
+        if (products.length === 0) {
+            currentSearchResults = [];
+            selectedSearchIndex = -1;
+            resultsDiv.innerHTML = '<div style="padding: 1rem; text-align: center;">No products found</div>';
+            resultsDiv.style.display = 'block';
+            return;
+        }
+        
+        renderSearchResults();
+    } catch (error) {
+        console.error('Search error:', error);
+        showModal('Search Error', 'An error occurred while searching for products.', 'error');
+    }
+}
+
+function renderSearchResults() {
+    const resultsDiv = document.getElementById('searchResults');
+    
+    resultsDiv.innerHTML = currentSearchResults.map((p, index) => {
+            const isOutOfStock = p.quantity === 0;
+            const selectedClass = index === selectedSearchIndex ? ' selected' : '';
+            const className = isOutOfStock ? 'search-result-item out-of-stock' : `search-result-item${selectedClass}`;
+            const onclick = isOutOfStock ? '' : `onclick="selectSearchProduct(${index})"`;
+            
+            return `
+                <div class="${className}" data-search-index="${index}" ${onclick}>
+                    <img src="${p.image || '/static/placeholder.png'}" alt="${p.name}">
+                    <div style="flex: 1;">
+                        <strong>${p.name}</strong><br>
+                        <small>Price: ₦${p.price.toFixed(2)} | ${getStockBadge(p.quantity)}</small>
+                        ${p.sku ? `<br><small style="color: #666;">SKU: ${p.sku}</small>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+    resultsDiv.style.display = 'block';
+    scrollSelectedSearchResultIntoView();
+}
+
+function moveSearchSelection(direction, visibleResults) {
+    const selectableResults = visibleResults || currentSearchResults
+        .map((product, index) => ({ product, index }))
+        .filter(result => result.product.quantity > 0);
+
+    if (!selectableResults.length) return;
+
+    const currentPosition = selectableResults.findIndex(result => result.index === selectedSearchIndex);
+    const nextPosition = currentPosition === -1
+        ? 0
+        : (currentPosition + direction + selectableResults.length) % selectableResults.length;
+
+    selectedSearchIndex = selectableResults[nextPosition].index;
+    renderSearchResults();
+}
+
+function scrollSelectedSearchResultIntoView() {
+    const selectedResult = document.querySelector('.search-result-item.selected');
+    if (selectedResult) {
+        selectedResult.scrollIntoView({ block: 'nearest' });
+    }
+}
+
+function selectSearchProduct(index) {
+    const product = currentSearchResults[index];
+    if (!product) return;
+    selectedSearchIndex = index;
+    addToCart(product);
+}
+
+function clearSearchResults() {
+    currentSearchResults = [];
+    selectedSearchIndex = -1;
+    const resultsDiv = document.getElementById('searchResults');
+    resultsDiv.style.display = 'none';
+    resultsDiv.innerHTML = '';
+}
+
+// ========== CART FUNCTIONS ==========
+function addToCart(product) {
+    if (product.quantity === 0) {
+        showModal('Out of Stock', `${product.name} is out of stock.`, 'warning');
+        return;
+    }
+    
+    const existingIndex = cart.findIndex(item => item.product_id === product.id);
+    let focusIndex = existingIndex;
+    
+    if (existingIndex > -1) {
+        if (cart[existingIndex].quantity < product.quantity) {
+            cart[existingIndex].quantity += 1;
+        } else {
+            showModal('Stock Limit', `Only ${product.quantity} items of ${product.name} available in stock.`, 'warning');
+            return;
+        }
+    } else {
+        cart.push({
+            product_id: product.id,
+            name: product.name,
+            price: parseFloat(product.price),
+            quantity: 1,
+            discount: 0,
+            image: product.image,
+            max_quantity: product.quantity
+        });
+        focusIndex = cart.length - 1;
+    }
+    
+    clearSearchResults();
+    document.getElementById('productSearch').value = '';
+    updateCart(focusIndex);
+}
+
+function calculateSubtotal() {
+    return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+}
+
+function calculateTotalDiscount() {
+    return cart.reduce((sum, item) => sum + (item.discount || 0), 0);
+}
+
+function calculateGrandTotal() {
+    return calculateSubtotal() - calculateTotalDiscount();
+}
+
+function updateCart(focusIndex = null) {
+    const tbody = document.getElementById('cartItems');
+    
+    if (cart.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 2rem;">
+                    <p style="color: #999;">Cart is empty. Search for products to add.</p>
+                </td>
+            </tr>
+        `;
+        updateTotals();
+        return;
+    }
+    
+    tbody.innerHTML = cart.map((item, index) => {
+        const itemTotal = (item.price * item.quantity) - item.discount;
+        return `
+            <tr>
+                <td>
+                    <strong>${item.name}</strong>
+                </td>
+                <td>₦${item.price.toFixed(2)}</td>
+                <td>
+                    <div class="quantity-control">
+                        <button onclick="updateQuantity(${index}, -1)">-</button>
+                        <input type="number" value="${item.quantity}" min="1" max="${item.max_quantity}"
+                               data-cart-quantity-index="${index}"
+                               onchange="setQuantity(${index}, this.value)">
+                        <button onclick="updateQuantity(${index}, 1)">+</button>
+                    </div>
+                </td>
+                <td>
+                    <input type="number" value="${item.discount.toFixed(2)}" min="0" step="0.01"
+                           onchange="setDiscount(${index}, this.value)"
+                           style="width: 80px; padding: 0.3rem; border: 1px solid #ddd; border-radius: 4px;">
+                </td>
+                <td><strong>₦${itemTotal.toFixed(2)}</strong></td>
+                <td>
+                    <button onclick="removeFromCart(${index})" class="btn btn-danger" style="padding: 0.3rem 0.6rem;">
+                        Remove
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+    
+    updateTotals();
+
+    if (focusIndex !== null) {
+        focusCartQuantityInput(focusIndex);
+    }
+}
+
+function focusCartQuantityInput(index) {
+    const input = document.querySelector(`[data-cart-quantity-index="${index}"]`);
+    if (input) {
+        input.focus();
+        input.select();
+    }
+}
+
+function updateTotals() {
+    const subtotal = calculateSubtotal();
+    const totalDiscount = calculateTotalDiscount();
+    const grandTotal = calculateGrandTotal();
+    
+    document.getElementById('subtotal').textContent = `₦${subtotal.toFixed(2)}`;
+    document.getElementById('totalDiscount').textContent = `₦${totalDiscount.toFixed(2)}`;
+    document.getElementById('grandTotal').textContent = `₦${grandTotal.toFixed(2)}`;
+    
+    updatePaymentTotal();
+}
+
+function updateQuantity(index, change) {
+    const item = cart[index];
+    const newQty = item.quantity + change;
+    
+    if (newQty < 1) {
+        removeFromCart(index);
+        return;
+    }
+    
+    if (newQty > item.max_quantity) {
+        showModal('Stock Limit', `Only ${item.max_quantity} items of ${item.name} available in stock.`, 'warning');
+        return;
+    }
+    
+    item.quantity = newQty;
+    updateCart();
+}
+
+function setQuantity(index, value) {
+    const qty = parseInt(value);
+    const item = cart[index];
+    
+    if (isNaN(qty) || qty < 1) {
+        item.quantity = 1;
+        updateCart();
+        return;
+    }
+    
+    if (qty > item.max_quantity) {
+        item.quantity = item.max_quantity;
+        updateCart();
+        return;
+    }
+    
+    item.quantity = qty;
+    updateCart();
+}
+
+function setDiscount(index, value) {
+    const discount = parseFloat(value) || 0;
+    const item = cart[index];
+    
+    const itemTotal = item.price * item.quantity;
+    if (discount > itemTotal) {
+        item.discount = itemTotal;
+    } else if (discount < 0) {
+        item.discount = 0;
+    } else {
+        item.discount = discount;
+    }
+    
+    updateCart();
+}
+
+function removeFromCart(index) {
+    showConfirmModal(
+        'Remove Item',
+        'Remove this item from cart?',
+        function() {
+            cart.splice(index, 1);
+            updateCart();
+        }
+    );
+}
+
+function clearCart() {
+    if (cart.length === 0) return;
+    
+    showConfirmModal(
+        'Clear Cart',
+        'Clear all items from cart?',
+        function() {
+            cart = [];
+            updateCart();
+            
+            document.getElementById('customerName').value = '';
+            document.getElementById('customerPhone').value = '';
+            
+            // Reset payment methods
+            const paymentList = document.getElementById('paymentMethodsList');
+            paymentList.innerHTML = `
+                <div class="payment-entry" data-payment-id="1">
+                    <select name="payment_method" class="payment-method-select" onchange="updatePaymentTotal()">
+                        <option value="cash">Cash</option>
+                        <option value="transfer">Bank Transfer</option>
+                        <option value="card">Card</option>
+                    </select>
+                    <input type="number" name="payment_amount" class="payment-amount-input" 
+                           step="0.01" min="0" value="0" placeholder="Amount" 
+                           oninput="updatePaymentTotal()">
+                    <span class="remove-payment" onclick="removePaymentEntry(this)" style="display: none;">×</span>
+                </div>
+            `;
+            updatePaymentTotal();
+            
+            selectPaymentType('full');
+        }
+    );
+}
+
+// ========== PAYMENT FUNCTIONS ==========
+function selectPaymentType(type) {
+    document.querySelectorAll('.payment-type-option').forEach(option => {
+        option.classList.remove('active');
+    });
+    
+    const targetOption = Array.from(document.querySelectorAll('.payment-type-option'))
+        .find(option => option.textContent.trim().toLowerCase().includes(type));
+    
+    if (targetOption) {
+        targetOption.classList.add('active');
+    }
+    
+    if (type === 'full') {
+        // Auto-fill payment methods with grand total
+        const grandTotal = calculateGrandTotal();
+        const entries = document.querySelectorAll('.payment-entry');
+        if (entries.length === 1) {
+            entries[0].querySelector('.payment-amount-input').value = grandTotal.toFixed(2);
+        }
+        updatePaymentTotal();
+    }
+}
+
+function addPaymentEntry() {
+    const currentCount = document.querySelectorAll('.payment-entry').length;
+    if (currentCount >= 3) {
+        showToast('Maximum 3 payment methods allowed', 'warning');
+        return;
+    }
+    
+    paymentCounter++;
+    const list = document.getElementById('paymentMethodsList');
+    const newEntry = document.createElement('div');
+    newEntry.className = 'payment-entry';
+    newEntry.dataset.paymentId = paymentCounter;
+    newEntry.innerHTML = `
+        <select name="payment_method" class="payment-method-select" onchange="updatePaymentTotal()">
+            <option value="cash">Cash</option>
+            <option value="transfer">Bank Transfer</option>
+            <option value="card">Card</option>
+        </select>
+        <input type="number" name="payment_amount" class="payment-amount-input" 
+               step="0.01" min="0" value="0" placeholder="Amount" 
+               oninput="updatePaymentTotal()">
+        <span class="remove-payment" onclick="removePaymentEntry(this)">×</span>
+    `;
+    list.appendChild(newEntry);
+    
+    if (document.querySelectorAll('.payment-entry').length > 1) {
+        document.querySelectorAll('.remove-payment').forEach(el => {
+            el.style.display = 'inline';
+        });
+    }
+    
+    updatePaymentTotal();
+}
+
+function removePaymentEntry(element) {
+    const entry = element.closest('.payment-entry');
+    entry.style.transition = 'all 0.3s ease';
+    entry.style.opacity = '0';
+    entry.style.transform = 'scale(0.95)';
+    setTimeout(() => {
+        entry.remove();
+        if (document.querySelectorAll('.payment-entry').length <= 1) {
+            document.querySelectorAll('.remove-payment').forEach(el => {
+                el.style.display = 'none';
+            });
+        }
+        updatePaymentTotal();
+    }, 300);
+}
+
+function updatePaymentTotal() {
+    const entries = document.querySelectorAll('.payment-entry');
+    let totalPaid = 0;
+    
+    entries.forEach(entry => {
+        const amount = parseFloat(entry.querySelector('.payment-amount-input').value) || 0;
+        totalPaid += amount;
+    });
+    
+    const grandTotal = calculateGrandTotal();
+    const remaining = Math.max(0, grandTotal - totalPaid);
+    
+    document.getElementById('totalPaidDisplay').textContent = `₦${totalPaid.toFixed(2)}`;
+    document.getElementById('remainingBalanceDisplay').textContent = `Remaining: ₦${remaining.toFixed(2)}`;
+}
+
+// ========== SAVE CART FUNCTIONS ==========
+function openSaveCartModal() {
+    if (cart.length === 0) {
+        showModal('Empty Cart', 'Please add items to cart before saving.', 'warning');
+        return;
+    }
+    
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    });
+    document.getElementById('cartNameInput').value = `Cart ${dateStr}`;
+    
+    document.getElementById('saveCartModal').style.display = 'flex';
+}
+
+function closeSaveCartModal() {
+    document.getElementById('saveCartModal').style.display = 'none';
+}
+
+async function saveCart() {
+    const cartName = document.getElementById('cartNameInput').value.trim();
+    
+    if (!cartName) {
+        showModal('Cart Name Required', 'Please enter a name for your cart.', 'warning');
+        return;
+    }
+    
+    const paymentType = document.querySelector('.payment-type-option.active').textContent.trim().toLowerCase().includes('full') ? 'full' : 'installment';
+    const customerName = document.getElementById('customerName').value.trim();
+    const customerPhone = document.getElementById('customerPhone').value.trim();
+    
+    const paymentEntries = document.querySelectorAll('.payment-entry');
+    const payments = [];
+    let totalPaid = 0;
+    
+    paymentEntries.forEach(entry => {
+        const method = entry.querySelector('.payment-method-select').value;
+        const amount = parseFloat(entry.querySelector('.payment-amount-input').value) || 0;
+        if (amount > 0) {
+            payments.push({
+                method: method,
+                amount: amount
+            });
+            totalPaid += amount;
+        }
+    });
+    
+    const cartData = {
+        cart_name: cartName,
+        cart_data: {
+            items: cart,
+            customer_name: customerName,
+            customer_phone: customerPhone,
+            payment_type: paymentType,
+            payments: payments,
+            amount_paid: totalPaid,
+            subtotal: calculateSubtotal(),
+            total: calculateGrandTotal(),
+            timestamp: new Date().toISOString()
+        }
+    };
+    
+    try {
+        const response = await fetch('/sales/api/save-cart/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(cartData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            closeSaveCartModal();
+            showToast('Cart saved successfully!', 'success');
+        } else {
+            showModal('Error', 'Failed to save cart: ' + (result.error || 'Unknown error'), 'error');
+        }
+    } catch (error) {
+        console.error('Save cart error:', error);
+        showModal('Network Error', 'Failed to save cart. Please check your connection.', 'error');
+    }
+}
+
+// ========== PROCESS SALE FUNCTION ==========
+async function processSale() {
+    if (cart.length === 0) {
+        showModal('Empty Cart', 'Please add items to cart before processing sale.', 'warning');
+        return;
+    }
+    
+    const customerName = document.getElementById('customerName').value.trim();
+    const customerPhone = document.getElementById('customerPhone').value.trim();
+    const paymentType = document.querySelector('.payment-type-option.active').textContent.trim().toLowerCase().includes('full') ? 'full' : 'installment';
+    const grandTotal = calculateGrandTotal();
+    
+    const paymentEntries = document.querySelectorAll('.payment-entry');
+    const payments = [];
+    let totalPaid = 0;
+    
+    paymentEntries.forEach(entry => {
+        const method = entry.querySelector('.payment-method-select').value;
+        const amount = parseFloat(entry.querySelector('.payment-amount-input').value) || 0;
+        if (amount > 0) {
+            payments.push({
+                method: method,
+                amount: amount
+            });
+            totalPaid += amount;
+        }
+    });
+    
+    if (paymentType === 'installment') {
+        if (totalPaid >= grandTotal) {
+            showModal('Invalid Payment', 'For installment payments, total paid must be less than grand total.', 'error');
+            return;
+        }
+        if (customerPhone.length === 0) {
+            showModal('Invalid Payment', 'For installment payments, customer must have a phone number.', 'error');
+            return;
+        }
+    } else {
+        if (totalPaid < grandTotal) {
+            showModal('Incomplete Payment', 'For full payment, total paid must equal the grand total.', 'error');
+            return;
+        }
+    }
+    
+    let savedCartId = null;
+    try {
+        const cartToLoad = sessionStorage.getItem('cartToLoad');
+        if (cartToLoad) {
+            const savedCartData = JSON.parse(cartToLoad);
+            savedCartId = savedCartData.saved_cart_id;
+        }
+    } catch (e) {
+        console.error('Error parsing saved cart data:', e);
+    }
+    
+    const items = cart.map(item => ({
+        product_id: item.product_id,
+        quantity: item.quantity,
+        price: item.price,
+        discount: item.discount || 0,
+        total: (item.price * item.quantity) - (item.discount || 0)
+    }));
+    
+    try {
+        const response = await fetch('/sales/api/process-sale/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                items: items,
+                customer_name: customerName,
+                customer_phone: customerPhone,
+                amount_paid: totalPaid,
+                payment_method: payments[0]?.method || 'cash',
+                payment_type: paymentType,
+                discount: calculateTotalDiscount(),
+                saved_cart_id: savedCartId,
+                payments: payments
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            cart = [];
+            updateCart();
+            sessionStorage.removeItem('cartToLoad');
+            document.getElementById('customerName').value = '';
+            document.getElementById('customerPhone').value = '';
+            
+            const paymentList = document.getElementById('paymentMethodsList');
+            paymentList.innerHTML = `
+                <div class="payment-entry" data-payment-id="1">
+                    <select name="payment_method" class="payment-method-select" onchange="updatePaymentTotal()">
+                        <option value="cash">Cash</option>
+                        <option value="transfer">Bank Transfer</option>
+                        <option value="card">Card</option>
+                    </select>
+                    <input type="number" name="payment_amount" class="payment-amount-input" 
+                           step="0.01" min="0" value="0" placeholder="Amount" 
+                           oninput="updatePaymentTotal()">
+                    <span class="remove-payment" onclick="removePaymentEntry(this)" style="display: none;">×</span>
+                </div>
+            `;
+            updatePaymentTotal();
+            selectPaymentType('full');
+            
+            window.location.href = `/sales/receipt/${result.sale_id}/`;
+        } else {
+            showModal('Error', result.error || 'Failed to process sale', 'error');
+        }
+    } catch (error) {
+        console.error('Process sale error:', error);
+        showModal('Network Error', 'Error processing sale. Please check your connection and try again.', 'error');
+    }
+}
+
+// ========== LOAD CART DATA FUNCTION ==========
+function loadCartData(cartData) {
+    if (cartData.items && cartData.items.length > 0) {
+        cart = cartData.items.map(item => ({
+            product_id: item.product_id || item.id,
+            name: item.name,
+            price: parseFloat(item.price),
+            quantity: parseInt(item.quantity),
+            discount: parseFloat(item.discount || 0),
+            image: item.image,
+            max_quantity: item.max_quantity || 999
+        }));
+        updateCart();
+    }
+    
+    if (cartData.customer_name) {
+        document.getElementById('customerName').value = cartData.customer_name;
+    }
+    if (cartData.customer_phone) {
+        document.getElementById('customerPhone').value = cartData.customer_phone;
+    }
+    if (cartData.payment_type) {
+        selectPaymentType(cartData.payment_type);
+    }
+    if (cartData.payments && cartData.payments.length > 0) {
+        const paymentList = document.getElementById('paymentMethodsList');
+        paymentList.innerHTML = '';
+        cartData.payments.forEach((payment, index) => {
+            const entry = document.createElement('div');
+            entry.className = 'payment-entry';
+            entry.dataset.paymentId = index + 1;
+            entry.innerHTML = `
+                <select name="payment_method" class="payment-method-select" onchange="updatePaymentTotal()">
+                    <option value="cash" ${payment.method === 'cash' ? 'selected' : ''}>Cash</option>
+                    <option value="transfer" ${payment.method === 'transfer' ? 'selected' : ''}>Bank Transfer</option>
+                    <option value="card" ${payment.method === 'card' ? 'selected' : ''}>Card</option>
+                </select>
+                <input type="number" name="payment_amount" class="payment-amount-input" 
+                       step="0.01" min="0" value="${payment.amount}" placeholder="Amount" 
+                       oninput="updatePaymentTotal()">
+                <span class="remove-payment" onclick="removePaymentEntry(this)" style="${cartData.payments.length > 1 ? 'display: inline' : 'display: none'}">×</span>
+            `;
+            paymentList.appendChild(entry);
+        });
+        updatePaymentTotal();
+    }
+    if (cartData.amount_paid) {
+        document.getElementById('amountPaid').value = parseFloat(cartData.amount_paid).toFixed(2);
+    }
+}
+
+// ========== TOAST NOTIFICATION FUNCTION ==========
+function showToast(message, type = 'info') {
+    const existingToast = document.querySelector('.toast-notification');
+    if (existingToast) {
+        existingToast.remove();
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = `toast-notification toast-${type}`;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        background: ${type === 'success' ? '#48bb78' : type === 'error' ? '#f56565' : '#4299e1'};
+        color: white;
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10000;
+        font-weight: 500;
+        animation: slideIn 0.3s ease;
+    `;
+    
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// ========== EVENT LISTENERS ==========
+document.addEventListener('click', function(e) {
+    const searchBox = document.querySelector('.search-box');
+    const searchResults = document.getElementById('searchResults');
+    
+    if (!searchBox.contains(e.target)) {
+        searchResults.style.display = 'none';
+    }
+});
+
+document.getElementById('saveCartModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeSaveCartModal();
+    }
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        document.getElementById('searchResults').style.display = 'none';
+        if (document.getElementById('saveCartModal').style.display === 'flex') {
+            closeSaveCartModal();
+        }
+    }
+});
+</script>
+{% endblock %}
