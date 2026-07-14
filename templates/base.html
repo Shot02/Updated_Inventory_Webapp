@@ -579,12 +579,12 @@
                     {% if user.role == 'admin' or user.role == 'manager' or user.is_superuser %}
                         <a href="{% url 'product_list' %}" class="nav-link {% if '/products/' in request.path %}active{% endif %}">Products</a>
                         <a href="{% url 'supplier_list' %}" class="nav-link {% if '/suppliers/' in request.path %}active{% endif %}">Suppliers</a>
-                        <a href="{% url 'saved_carts_list' %}" class="nav-link">Carts</a>
                         <a href="{% url 'sale_history' %}" class="nav-link {% if '/sale_history' in request.path %}active{% endif %}">
                             Sales{% if unread_sales_count > 0 %}<span class="notification-badge">{{ unread_sales_count }}</span>{% endif %}
                         </a>
                     {% endif %}
                     
+                    <a href="{% url 'saved_carts_list' %}" class="nav-link">Carts</a>
                     <a href="{% url 'debtors_list' %}" class="nav-link">
                         Debtors{% if unread_debtors_count > 0 %}<span class="notification-badge">{{ unread_debtors_count }}</span>{% endif %}
                     </a>

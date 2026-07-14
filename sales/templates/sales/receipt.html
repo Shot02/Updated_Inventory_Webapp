@@ -1,30 +1,15 @@
-<!-- sales/templates/sales/receipt.html -->
-{% extends 'base.html' %}
 
+{% extends 'base.html' %}
+{% load static %}
 {% block title %}Receipt - {{ sale.invoice_number }}{% endblock %}
 
 {% block extra_css %}
 <style>
-    @media print {
-        body * {
-            visibility: hidden;
-        }
-        .receipt-container, .receipt-container * {
-            visibility: visible;
-        }
-        .receipt-container {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-        }
-        .no-print {
-            display: none !important;
-        }
-    }
-    
+    /* =======================================
+       SCREEN STYLES (Preserved Original)
+       ======================================= */
     .receipt-container {
-        max-width: 800px;
+        max-width: 1000px;
         margin: 0 auto;
         background: white;
         padding: 2rem;
@@ -36,11 +21,11 @@
         text-align: center;
         margin-bottom: 2rem;
         padding-bottom: 1rem;
-        border-bottom: 2px solid #10b981;
+        border-bottom: 2px solid #145c28; /* Changed to deeper green */
     }
     
     .receipt-header h1 {
-        color: #10b981;
+        color: #145c28; /* Changed to deeper green */
         margin-bottom: 0.5rem;
         font-size: 2rem;
     }
@@ -50,7 +35,19 @@
         font-size: 1.2rem;
         margin-bottom: 1rem;
     }
+    .receipt-logo {
+    width: 70% !important; /* Increased from 60% to make it much wider */
+    max-width: 260px !important; /* Raised the maximum limit */
+    height: auto !important;
     
+    /* This ensures the larger logo stays perfectly centered */
+    display: block !important;
+    margin: 0 auto 10px auto !important; 
+    
+    /* Keeping the clarity filters that are working well */
+    filter: grayscale(100%) contrast(200%) brightness(110%) !important; 
+    image-rendering: high-quality !important; 
+    }
     .receipt-info {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -72,35 +69,6 @@
         color: #555;
     }
     
-    .payment-methods-list {
-        margin-top: 0.5rem;
-        padding: 0.5rem;
-        background: white;
-        border-radius: 6px;
-        border: 1px solid #e0e0e0;
-    }
-    
-    .payment-method-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 0.3rem 0;
-        border-bottom: 1px solid #f0f0f0;
-    }
-    
-    .payment-method-item:last-child {
-        border-bottom: none;
-    }
-    
-    .payment-method-label {
-        font-weight: 500;
-        color: #333;
-    }
-    
-    .payment-method-amount {
-        font-weight: 600;
-        color: #10b981;
-    }
-    
     .receipt-table {
         width: 100%;
         border-collapse: collapse;
@@ -108,7 +76,7 @@
     }
     
     .receipt-table th {
-        background: #10b981;
+        background: #145c28; /* Changed to deeper green */
         color: white;
         padding: 1rem;
         text-align: left;
@@ -140,7 +108,7 @@
     .summary-row.total {
         font-size: 1.5rem;
         font-weight: bold;
-        color: #10b981;
+        color: #145c28; /* Changed to deeper green */
         border-top: 2px solid #ddd;
         padding-top: 1rem;
         margin-top: 1rem;
@@ -184,24 +152,105 @@
         justify-content: center;
         margin-top: 2rem;
     }
+
+    /* =======================================
+       80MM THERMAL PRINT STYLES
+       ======================================= */
+    @media print {
+        @page {
+            margin: 0;
+            width: 80mm;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: auto !important;
+            overflow: visible !important; /* Prevents long print cutoff */
+            background: white !important;
+        }
+
+        body * {
+            visibility: hidden;
+        }
+
+        .receipt-container, .receipt-container * {
+            visibility: visible;
+            color: #000 !important; /* Force black ink for thermal clarity */
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
+        }
+       receipt-logo {
+    width: 250px; /* Increased size using width instead of height */
+    height: auto;
+    margin-bottom: 15px;
+    border-radius: 8px;
+}
+        .receipt-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100% !important;
+            max-width: 78mm !important; /* Safe zone for 80mm roll */
+            margin: 0 !important;
+            padding: 4mm !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+        }
+
+        .no-print {
+            display: none !important;
+        }
+
+        /* Optimize Header for Narrow Roll */
+        .receipt-header { border-bottom: 2px solid #000 !important; margin-bottom: 10px !important; padding-bottom: 5px !important; }
+        .receipt-header h1 { font-size: 16px !important; font-weight: 900 !important; margin-bottom: 2px !important; }
+        .receipt-header h2 { font-size: 12px !important; font-weight: bold !important; margin-bottom: 5px !important; }
+        .receipt-header p { font-size: 14px !important; margin: 0 !important; }
+
+        /* Stack Info Sections (Disables Grid for 80mm width) */
+        .receipt-info {
+            display: block !important;
+            padding: 0 !important;
+            background: transparent !important;
+            margin-bottom: 10px !important;
+            border: none !important;
+        }
+        
+        .info-section {
+            text-align: left !important;
+            margin-bottom: 10px !important;
+        }
+        
+        .info-section h3 { font-size: 13px !important; border-bottom: 1px dashed #000; padding-bottom: 3px; margin-bottom: 5px !important; }
+        .info-section p { font-size: 12px !important; margin: 2px 0 !important; font-weight: 600 !important; }
+
+        /* Optimize Table for 80mm */
+        .receipt-table { width: 100% !important; margin-bottom: 10px !important; }
+        .receipt-table th { background: transparent !important; color: #000 !important; border-bottom: 2px solid #000 !important; font-size: 11px !important; padding: 4px 2px !important; }
+        .receipt-table td { font-size: 11px !important; padding: 4px 2px !important; border-bottom: 1px dashed #000 !important; word-wrap: break-word; font-weight: bold !important; }
+        
+        /* Summary Adjustments */
+        .receipt-summary { padding: 0 !important; background: transparent !important; margin-bottom: 10px !important; }
+        .summary-row { font-size: 13px !important; margin-bottom: 4px !important; font-weight: bold !important; }
+        .summary-row.total { border-top: 2px solid #000 !important; padding-top: 5px !important; margin-top: 5px !important; }
+        .summary-row.total span { font-size: 18px !important; font-weight: 900 !important; }
+        
+        /* Fix Payment Status Badge */
+        .payment-status { background: transparent !important; color: #000 !important; border: 1px solid #000; padding: 2px 5px !important; }
+        
+        /* Footer */
+        .receipt-footer { border-top: 1px dashed #000 !important; padding-top: 5px !important; margin-top: 10px !important; font-size: 11px !important; font-weight: bold !important; }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="receipt-container">
     <div class="receipt-header">
-        <h1>WADRASH</h1>
-        <h2>NIG ENTERPRISES</h2>
+        <img class="receipt-logo" src="{% static 'img/WAS.jpg' %}" alt="WADRASH Logo">
+        <h1>WADRASH NIG. LIMITED</h1>
         <h2>SALES RECEIPT</h2>
         <p style="font-size: 1.2rem;"><strong>Invoice: {{ sale.invoice_number }}</strong></p>
-        <p style="font-size: 1rem; color: #666;">
-            <strong>Branch:</strong> 
-            {% if sale.branch %}
-                {{ sale.branch.name }} ({{ sale.branch.code }})
-            {% else %}
-                <span style="color: #999;">N/A</span>
-            {% endif %}
-        </p>
     </div>
     
     <div class="receipt-info">
@@ -209,39 +258,25 @@
             <h3>Customer Information</h3>
             <p><strong>Name:</strong> {{ sale.customer_name|default:"-" }}</p>
             <p><strong>Phone:</strong> {{ sale.customer_phone|default:"-" }}</p>
-            <p><strong>Payment Status:</strong>     
+            <p><strong>Payment Status:</strong> 
                 <span class="payment-status status-{{ sale.payment_status }}">
                     {{ sale.payment_status|title }}
                 </span>
             </p>
-            <p><strong>Branch:</strong> {{ sale.branch.name|default:"N/A" }}</p>
+            <p><strong>Branch:</strong> {{ sale.branch.name|default:"-" }}</p>
         </div>
         <div class="info-section" style="text-align: right;">
             <h3>Transaction Details</h3>
             <p><strong>Date:</strong> {{ sale.created_at|date:"F d, Y" }}</p>
             <p><strong>Time:</strong> {{ sale.created_at|date:"h:i A" }}</p>
-            <p><strong>Served By:</strong>                     
-                        {% if sale.staff %}
-                            {{ sale.staff.get_full_name|default:sale.staff.username }}
-                        {% else %}
-                            No staff assigned
-                        {% endif %}
+            <p><strong>Served By:</strong> {{ sale.staff.get_full_name|default:sale.staff.username }}</p>
+            <p><strong>Payment Method:</strong> 
+                {% if sale.payments.exists %}
+                    {{ sale.payments.last.payment_method|title }}
+                {% else %}
+                    Cash
+                {% endif %}
             </p>
-            
-            <h3 style="margin-top: 1rem;">Payment Methods</h3>
-            <div class="payment-methods-list">
-                {% for payment in sale.payments.all %}
-                <div class="payment-method-item">
-                    <span class="payment-method-label">{{ payment.payment_method|title }}</span>
-                    <span class="payment-method-amount">₦{{ payment.amount|floatformat:2 }}</span>
-                </div>
-                {% empty %}
-                <div class="payment-method-item">
-                    <span class="payment-method-label">Cash</span>
-                    <span class="payment-method-amount">₦{{ sale.amount_paid|floatformat:2 }}</span>
-                </div>
-                {% endfor %}
-            </div>
         </div>
     </div>
     
@@ -270,7 +305,7 @@
         </tbody>
     </table>
     
-    <div class="receipt-summary">
+    <div class="receipt-summary" style="font-size: 1.9rem !important;">
         <div class="summary-row">
             <span>Subtotal:</span>
             <span>₦{{ sale.subtotal|floatformat:2 }}</span>
@@ -279,28 +314,33 @@
             <span>Total Item Discounts:</span>
             <span>₦{{ item_discounts_total|floatformat:2 }}</span>
         </div>
+        <div class="summary-row">
+            <span>Sale Discount:</span>
+            <span>₦{{ sale.discount|floatformat:2 }}</span>
+        </div>
         <div class="summary-row total">
             <span>GRAND TOTAL:</span>
-            <span>₦{{ sale.total|floatformat:2 }}</span>
+            <span style="font-size: 1.9rem !important;">₦{{ sale.total|floatformat:2 }}</span>
         </div>
         <div class="summary-row">
-            <span>Total Amount Paid:</span>
-            <span>₦{{ sale.amount_paid|floatformat:2 }}</span>
+            <span>Amount Paid:</span>
+            <span style="font-size: 1.9rem !important;">₦{{ sale.amount_paid|floatformat:2 }}</span>
         </div>
         {% if sale.balance > 0 %}
-        <div class="summary-row" style="color: #dc3545">
+        <div class="summary-row" style="color: #dc3545;">
             <span><strong>Balance Due:</strong></span>
-            <span><strong>₦{{ sale.balance|floatformat:2 }}</strong></span>
+            <span style="font-size: 1.9rem !important;"><strong>₦{{ sale.balance|floatformat:2 }}</strong></span>
         </div>
         {% endif %}
     </div>
     
-    <div class="receipt-footer">
-        <p>Thank you for your business!</p>
-        <p>For inquiries, please contact:</p>
+   <div class="receipt-footer">
+
+           <p>Thank you for Choosing Us!</p>
+
+        <p>ALH. WAHEED WAREHOUSE,  DANKANO AREA, ILESHA IBARIBA ROAD, SANGO SAKI</p>
+
         <p>0813 996 2877, 0912 484 0161</p>
-        <p>wadrashshittu@gmail.com</p>
-        <p>ALH. WAHEED WAREHOUSE, DANKANO AREA, ILESHA IBARIBA ROAD, SANGO SAKI.</p>
     </div>
     
     <div class="action-buttons no-print">
@@ -316,3 +356,6 @@
     </div>
 </div>
 {% endblock %}
+
+
+
