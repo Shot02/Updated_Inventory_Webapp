@@ -1,4 +1,3 @@
-<!-- sales/templates/sales/sale_history.html -->
 {% extends 'base.html' %}
 
 {% block title %}Sales History{% endblock %}
@@ -38,7 +37,7 @@
     .stat-card .value {
         font-size: 1.8rem;
         font-weight: bold;
-        color: #dc3545;
+        color: #667eea;
     }
     
     .search-container {
@@ -59,7 +58,7 @@
     }
     
     .search-input:focus {
-        border-color: #dc3545;
+        border-color: #667eea;
         outline: none;
         box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
@@ -69,7 +68,7 @@
         right: 10px;
         top: 50%;
         transform: translateY(-50%);
-        background: #dc3545;
+        background: #667eea;
         color: white;
         padding: 0.25rem 0.75rem;
         border-radius: 12px;
@@ -84,7 +83,7 @@
         padding: 0.5rem;
         background: #f8f9fa;
         border-radius: 6px;
-        border-left: 3px solid #dc3545;
+        border-left: 3px solid #667eea;
     }
     
     .date-filters {
@@ -142,15 +141,15 @@
     }
     
     .pagination-link:hover {
-        background: #dc3545;
+        background: #667eea;
         color: white;
-        border-color: #dc3545;
+        border-color: #667eea;
     }
     
     .pagination-link.active {
-        background: #dc3545;
+        background: #667eea;
         color: white;
-        border-color: #dc3545;
+        border-color: #667eea;
     }
     
     .empty-state {
@@ -176,8 +175,6 @@
     .badge-success { background: #d1fae5; color: #065f46; }
     .badge-warning { background: #fef3c7; color: #92400e; }
     .badge-danger  { background: #fee2e2; color: #b91c1c; }
-    .badge-info { background: #e0f2fe; color: #0369a1; }
-    .badge-secondary { background: #f1f5f9; color: #475569; }
     
     .action-buttons {
         display: flex;
@@ -204,7 +201,7 @@
 {% block content %}
 <div class="stats-header">
     <h1>Sales History</h1>
-    <div style="font-size: 1.1rem; color: #dc3545; font-weight: 600;">
+    <div style="font-size: 1.1rem; color: #667eea; font-weight: 600;">
         Total Sales: {{ total_sales_count }}
     </div>
 </div>
@@ -249,16 +246,17 @@
 
 <!-- Search and Filters -->
 <div class="search-container">
+    <!-- Date Filters -->
     <div class="date-filters">
         <div class="date-input-group">
             <label>From Date</label>
-            <input type="date" id="dateFrom" class="form-control" 
-                   value="{{ request.GET.date_from|default:'' }}">
+            <input type="date" id="dateFrom" name="date_from" class="form-control" 
+                   value="{{ date_from|default:'' }}">
         </div>
         <div class="date-input-group">
             <label>To Date</label>
-            <input type="date" id="dateTo" class="form-control" 
-                   value="{{ request.GET.date_to|default:'' }}">
+            <input type="date" id="dateTo" name="date_to" class="form-control" 
+                   value="{{ date_to|default:'' }}">
         </div>
         <div style="display: flex; align-items: flex-end; gap: 0.5rem;">
             <button onclick="applyDateFilter()" class="btn btn-primary">Apply Date</button>
@@ -266,6 +264,7 @@
         </div>
     </div>
     
+    <!-- Search Bar -->
     <div style="margin-top: 1rem;">
         <div style="position: relative;">
             <input type="text" 
@@ -302,9 +301,6 @@
                     <th>Paid</th>
                     <th>Balance</th>
                     <th>Status</th>
-                    {% if viewing_all_branches %}
-                    <th>Branch</th>
-                    {% endif %}
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -336,15 +332,6 @@
                         <span class="badge badge-danger">Unpaid</span>
                         {% endif %}
                     </td>
-                    {% if viewing_all_branches %}
-                    <td>
-                        {% if sale.branch %}
-                            <span class="badge badge-info">{{ sale.branch.name }}</span>
-                        {% else %}
-                            <span class="badge badge-secondary">No Branch</span>
-                        {% endif %}
-                    </td>
-                    {% endif %}
                     <td>
                         <div class="action-buttons">
                             <a href="{% url 'view_receipt' sale.id %}" class="btn btn-primary btn-sm">
@@ -355,7 +342,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="13" style="text-align: center; padding: 2rem;">
+                    <td colspan="12" style="text-align: center; padding: 2rem;">
                         <div class="empty-state">
                             <div class="empty-state-icon"></div>
                             <h3>No Sales Recorded</h3>
@@ -376,10 +363,10 @@
         </div>
         <div class="pagination-links">
             {% if page_obj.has_previous %}
-            <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}" class="pagination-link">
+            <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="pagination-link">
                 &laquo; First
             </a>
-            <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" class="pagination-link">
+            <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="pagination-link">
                 &lsaquo; Prev
             </a>
             {% endif %}
@@ -388,17 +375,17 @@
                 {% if page_obj.number == num %}
                 <span class="pagination-link active">{{ num }}</span>
                 {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}" class="pagination-link">
+                <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="pagination-link">
                     {{ num }}
                 </a>
                 {% endif %}
             {% endfor %}
             
             {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" class="pagination-link">
+            <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="pagination-link">
                 Next &rsaquo;
             </a>
-            <a href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}" class="pagination-link">
+            <a href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="pagination-link">
                 Last &raquo;
             </a>
             {% endif %}
@@ -423,12 +410,20 @@ async function performSalesHistorySearch() {
     const searchCount = document.getElementById('searchCount');
     
     if (!searchTerm) {
+        // Reload page without search
         window.location.href = "{% url 'sale_history' %}";
         return;
     }
     
     try {
-        const searchUrl = `/sales/api/sales-history/?q=${encodeURIComponent(searchTerm)}`;
+        // Get current date filters from URL or inputs
+        const dateFrom = document.getElementById('dateFrom').value;
+        const dateTo = document.getElementById('dateTo').value;
+        
+        let searchUrl = `/api/sales-history/?q=${encodeURIComponent(searchTerm)}`;
+        if (dateFrom) searchUrl += `&date_from=${dateFrom}`;
+        if (dateTo) searchUrl += `&date_to=${dateTo}`;
+        
         const response = await fetch(searchUrl);
         const data = await response.json();
         
@@ -438,6 +433,7 @@ async function performSalesHistorySearch() {
         }
     } catch (error) {
         console.error('Search error:', error);
+        // Fallback to page reload with search
         window.location.href = "{% url 'sale_history' %}?search=" + encodeURIComponent(searchTerm);
     }
 }
@@ -498,7 +494,7 @@ function updateSalesHistoryTable(results) {
                 <td>${statusBadge}</td>
                 <td>
                     <div class="action-buttons">
-                        <a href="/sales/receipt/${sale.id}/" class="btn btn-primary btn-sm">
+                        <a href="/receipt/${sale.id}/" class="btn btn-primary btn-sm">
                             View
                         </a>
                     </div>
@@ -508,6 +504,8 @@ function updateSalesHistoryTable(results) {
     });
     
     tableBody.innerHTML = rowsHtml;
+    
+    // Hide pagination when searching
     const pagination = document.querySelector('.pagination');
     if (pagination) {
         pagination.style.display = 'none';
@@ -520,6 +518,7 @@ function updateSalesHistoryCount(count, limited = false) {
     if (count > 0) {
         let countText = `${count} sale${count !== 1 ? 's' : ''}`;
         if (limited) countText += ' (50+)';
+        
         searchCount.innerHTML = `<small>${countText}</small>`;
         searchCount.style.display = 'block';
     } else {
@@ -527,6 +526,7 @@ function updateSalesHistoryCount(count, limited = false) {
     }
 }
 
+// Apply date filter
 function applyDateFilter() {
     const dateFrom = document.getElementById('dateFrom').value;
     const dateTo = document.getElementById('dateTo').value;
@@ -534,19 +534,14 @@ function applyDateFilter() {
     
     let url = "{% url 'sale_history' %}?";
     const params = [];
-    if (dateFrom) {
-        params.push('date_from=' + encodeURIComponent(dateFrom));
-    }
-    if (dateTo) {
-        params.push('date_to=' + encodeURIComponent(dateTo));
-    }
-    if (searchQuery) {
-        params.push('search=' + encodeURIComponent(searchQuery));
-    }
+    if (dateFrom) params.push('date_from=' + encodeURIComponent(dateFrom));
+    if (dateTo) params.push('date_to=' + encodeURIComponent(dateTo));
+    if (searchQuery) params.push('search=' + encodeURIComponent(searchQuery));
     url += params.join('&');
     window.location.href = url;
 }
 
+// Clear date filter
 function clearDateFilter() {
     const searchQuery = document.getElementById('salesSearchInput').value;
     let url = "{% url 'sale_history' %}";
@@ -556,17 +551,24 @@ function clearDateFilter() {
     window.location.href = url;
 }
 
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('salesSearchInput');
+    
     if (searchInput) {
         searchInput.addEventListener('input', debounceSalesHistorySearch);
+        
         searchInput.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 this.value = '';
                 debounceSalesHistorySearch();
             }
         });
+        
+        // Focus on search input
         searchInput.focus();
+        
+        // If there's a search query in URL, update the input
         const urlParams = new URLSearchParams(window.location.search);
         const searchParam = urlParams.get('search');
         if (searchParam) {

@@ -6,6 +6,7 @@ urlpatterns = [
     path('api/search-products/', views.search_products_api, name='search_products_api'), 
     path('receipt/<int:sale_id>/', views.view_receipt, name='view_receipt'),
     path('history/', views.sale_history, name='sale_history'),
+    path('api/sales-history/', views.sale_history_search_api, name='sale_history_search_api'),
     path('api/process-sale/', views.process_sale, name='process_sale'),
     path('api/save-cart/', views.save_cart, name='save_cart'),
     path('api/load-saved-cart/<int:cart_id>/', views.load_saved_cart, name='load_saved_cart'),

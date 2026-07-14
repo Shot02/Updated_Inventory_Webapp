@@ -79,9 +79,15 @@ def view_receipt(request, sale_id):
 
 @login_required
 def sale_history(request):
+    """Sales history with date filtering and search"""
+    # --- FIX: Get all filter parameters ---
     search_query = request.GET.get('search', '')
     page_number = request.GET.get('page', 1)
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    # --- FIX END ---
     
+    # Get current branch
     current_branch = None
     if request.user.is_superuser or request.user.role == 'admin':
         branch_id = request.session.get('current_branch_id')
@@ -93,13 +99,26 @@ def sale_history(request):
     else:
         current_branch = request.user.branch
     
+    # Base queryset
     sales = Sale.objects.all().select_related('staff', 'branch').order_by('-created_at')
     
+    # Apply branch filter
     if current_branch:
         sales = sales.filter(branch=current_branch)
     elif not (request.user.is_superuser or request.user.role == 'admin'):
         sales = sales.none()
     
+    # --- FIX: Apply date range filter ---
+    if date_from and date_to:
+        try:
+            start_date = datetime.strptime(date_from, '%Y-%m-%d').date()
+            end_date = datetime.strptime(date_to, '%Y-%m-%d').date() + timedelta(days=1)
+            sales = sales.filter(created_at__range=[start_date, end_date])
+        except ValueError:
+            pass
+    # --- FIX END ---
+    
+    # Apply search filter
     if search_query:
         sales = sales.filter(
             Q(invoice_number__icontains=search_query) |
@@ -108,6 +127,7 @@ def sale_history(request):
             Q(staff__username__icontains=search_query)
         )
     
+    # Pagination
     paginator = Paginator(sales, 50)
     
     try:
@@ -126,9 +146,84 @@ def sale_history(request):
         'page_total': page_total,
         'total_sales_count': sales.count(),
         'current_branch': current_branch,
-        'viewing_all_branches': current_branch is None and (request.user.is_superuser or request.user.role == 'admin')
+        'viewing_all_branches': current_branch is None and (request.user.is_superuser or request.user.role == 'admin'),
+        # --- FIX: Pass dates back to template ---
+        'date_from': date_from,
+        'date_to': date_to,
+        # --- FIX END ---
     }
     return render(request, 'sales/sale_history.html', context)
+
+@login_required
+def sale_history_search_api(request):
+    """API endpoint for sales history search"""
+    search_term = request.GET.get('q', '').strip()
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    
+    # Get current branch
+    current_branch = None
+    if request.user.is_superuser or request.user.role == 'admin':
+        branch_id = request.session.get('current_branch_id')
+        if branch_id:
+            try:
+                current_branch = Branch.objects.get(id=branch_id)
+            except Branch.DoesNotExist:
+                current_branch = None
+    else:
+        current_branch = request.user.branch
+    
+    # Base queryset
+    sales = Sale.objects.all().select_related('staff', 'branch').order_by('-created_at')
+    
+    # Filter by branch
+    if current_branch:
+        sales = sales.filter(branch=current_branch)
+    elif not (request.user.is_superuser or request.user.role == 'admin'):
+        sales = sales.none()
+    
+    # Filter by date range
+    if date_from and date_to:
+        try:
+            start_date = datetime.strptime(date_from, '%Y-%m-%d').date()
+            end_date = datetime.strptime(date_to, '%Y-%m-%d').date() + timedelta(days=1)
+            sales = sales.filter(created_at__range=[start_date, end_date])
+        except ValueError:
+            pass
+    
+    # Filter by search term
+    if search_term:
+        sales = sales.filter(
+            Q(invoice_number__icontains=search_term) |
+            Q(customer_name__icontains=search_term) |
+            Q(customer_phone__icontains=search_term) |
+            Q(staff__username__icontains=search_term)
+        )
+    
+    sales = sales[:100]
+    
+    results = []
+    for sale in sales:
+        results.append({
+            'id': sale.id,
+            'invoice_number': sale.invoice_number,
+            'customer_name': sale.customer_name or 'Walk-in',
+            'customer_phone': sale.customer_phone or '',
+            'staff_name': sale.staff.username if sale.staff else 'Unknown',
+            'subtotal': float(sale.subtotal),
+            'discount': float(sale.discount),
+            'total': float(sale.total),
+            'amount_paid': float(sale.amount_paid),
+            'balance': float(sale.balance),
+            'payment_status': sale.payment_status,
+            'created_at': sale.created_at.isoformat(),
+        })
+    
+    return JsonResponse({
+        'success': True,
+        'results': results,
+        'count': len(results),
+    })
 
 @login_required
 @csrf_exempt

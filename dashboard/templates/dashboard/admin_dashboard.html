@@ -1,4 +1,3 @@
-<!-- dashboard/templates/dashboard/admin_dashboard.html -->
 {% extends 'base.html' %}
 
 {% block title %}Admin Dashboard{% endblock %}
@@ -370,11 +369,15 @@
         <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; align-items: end; margin-top: 1.5rem;">
             <div class="date-input-group">
                 <label>Start Date</label>
-                <input type="date" id="startDate" name="custom_start" value="{{ start_date|date:'Y-m-d' }}" class="form-control">
+                <input type="date" id="startDate" name="custom_start" 
+                    value="{% if custom_start %}{{ custom_start }}{% else %}{{ start_date|date:'Y-m-d' }}{% endif %}" 
+                    class="form-control">
             </div>
             <div class="date-input-group">
                 <label>End Date</label>
-                <input type="date" id="endDate" name="custom_end" value="{{ end_date|date:'Y-m-d' }}" class="form-control">
+                <input type="date" id="endDate" name="custom_end" 
+                    value="{% if custom_end %}{{ custom_end }}{% else %}{{ end_date|date:'Y-m-d' }}{% endif %}" 
+                    class="form-control">
             </div>
             <div>
                 <button type="submit" class="btn btn-primary">Apply Date Range</button>
@@ -542,59 +545,28 @@
 <div class="profit-section">
     <!-- Profit Stats Grid -->
     <div class="profit-grid">
-        <!-- Total Profit Card -->
         <div class="profit-card profit">
             <h3>Profit</h3>
             <div class="value">₦{{ total_profit|floatformat:2 }}</div>
             <div class="subtext">What you keep after costs</div>
         </div>
         
-        <!-- Revenue Card -->
         <div class="profit-card revenue">
             <h3>Sales Revenue</h3>
             <div class="value">₦{{ total_revenue_from_sales|floatformat:2 }}</div>
             <div class="subtext">Before costs</div>
         </div>
         
-        <!-- Cost of Goods Card -->
         <div class="profit-card cost">
             <h3>Cost of Products</h3>
             <div class="value">₦{{ total_cost_of_goods|floatformat:2 }}</div>
             <div class="subtext">What you paid</div>
         </div>
         
-        <!-- Profit Margin Card -->
         <div class="profit-card margin">
             <h3>Profit Margin</h3>
             <div class="value">{{ profit_margin|floatformat:1 }}%</div>
             <div class="subtext">Efficiency</div>
-        </div>
-    </div>
-    
-    <!-- Profit by Payment Method -->
-    <div class="card" style="margin-bottom: 1.5rem;">
-        <div class="card-header">
-            <h3>Profit by Payment Method</h3>
-        </div>
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; padding: 1rem;">
-            <div style="text-align: center;">
-                <h4 style="color: #666; margin-bottom: 0.5rem;">Cash</h4>
-                <div style="font-size: 1.5rem; font-weight: bold; color: #10b981;">
-                    ₦{{ profit_by_payment.cash|floatformat:2 }}
-                </div>
-            </div>
-            <div style="text-align: center;">
-                <h4 style="color: #666; margin-bottom: 0.5rem;">Transfer</h4>
-                <div style="font-size: 1.5rem; font-weight: bold; color: #3b82f6;">
-                    ₦{{ profit_by_payment.transfer|floatformat:2 }}
-                </div>
-            </div>
-            <div style="text-align: center;">
-                <h4 style="color: #666; margin-bottom: 0.5rem;">Card</h4>
-                <div style="font-size: 1.5rem; font-weight: bold; color: #8b5cf6;">
-                    ₦{{ profit_by_payment.card|floatformat:2 }}
-                </div>
-            </div>
         </div>
     </div>
     
@@ -823,7 +795,16 @@
 <script>
 // =================== DATE FILTER FUNCTIONS ===================
 function setDateFilter(filter) {
+    // Set the hidden date_filter input
     document.getElementById('dateFilter').value = filter;
+    
+    // If user clicks "Today", clear custom dates
+    if (filter === 'today') {
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+    }
+    
+    // Submit the form
     document.getElementById('dateFilterForm').submit();
 }
 
@@ -844,7 +825,7 @@ async function performRealTimeSearch(type, searchTerm) {
         const customStart = urlParams.get('custom_start') || '{{ start_date|date:"Y-m-d" }}';
         const customEnd = urlParams.get('custom_end') || '{{ end_date|date:"Y-m-d" }}';
         
-        let searchUrl = `/dashboard/api/search/${type}/?q=${encodeURIComponent(searchTerm)}`;
+        let searchUrl = `/api/search/${type}/?q=${encodeURIComponent(searchTerm)}`;
         searchUrl += `&date_filter=${dateFilter}`;
         searchUrl += `&custom_start=${customStart}`;
         searchUrl += `&custom_end=${customEnd}`;
@@ -868,7 +849,7 @@ function updateTable(type, results) {
         if (results.length === 0) {
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="8" style="text-align: center; padding: 2rem;">
+                    <td colspan="7" style="text-align: center; padding: 2rem;">
                         <div class="empty-state">
                             <h3>No Sales Found</h3>
                             <p>No sales match your search criteria</p>
@@ -907,13 +888,14 @@ function updateTable(type, results) {
                     <td>${statusBadge}</td>
                     <td>${formattedDate}</td>
                     <td>
-                        <a href="/sales/receipt/${sale.id}/" class="btn btn-primary btn-sm">
+                        <a href="/receipt/${sale.id}/" class="btn btn-primary btn-sm">
                             View
                         </a>
                     </td>
                 </tr>
             `;
         });
+        
         tableBody.innerHTML = rowsHtml;
         
     } else if (type === 'stock') {
@@ -948,6 +930,7 @@ function updateTable(type, results) {
                 </tr>
             `;
         });
+        
         tableBody.innerHTML = rowsHtml;
     }
 }
@@ -974,11 +957,11 @@ function updateSearchCount(type, count) {
     }
 }
 
-// =================== REFUND STATS ===================
 async function loadRefundStats() {
     try {
-        const response = await fetch('/refunds/api/refund-stats/');
+        const response = await fetch('/api/refund-stats/');
         const data = await response.json();
+        
         document.getElementById('todayRefunds').textContent = `₦${data.today_refunds.toFixed(2)}`;
         document.getElementById('pendingRefunds').textContent = data.pending_requests;
     } catch (error) {
@@ -1201,5 +1184,65 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+
+// =================== INITIALIZATION ===================
+document.addEventListener('DOMContentLoaded', function() {
+    // --- FIX: Attach event listener to the Apply Date Range button ---
+    const applyBtn = document.querySelector('button[type="submit"]');
+    if (applyBtn) {
+        applyBtn.addEventListener('click', function(e) {
+            // When user clicks Apply Date Range, set date_filter to 'custom'
+            document.getElementById('dateFilter').value = 'custom';
+        });
+    }
+    
+    // Load refund stats
+    loadRefundStats();
+    
+    // Mark notifications as read
+    const unreadCount = parseInt(document.body.dataset.unreadDashboardCount || '0');
+    if (unreadCount > 0) {
+        fetch('/mark-notifications-read/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                notification_type: 'dashboard'
+            })
+        });
+    }
+    
+    // Initialize search inputs
+    const salesSearchInput = document.getElementById('salesSearchInput');
+    const stockSearchInput = document.getElementById('stockSearchInput');
+    
+    if (salesSearchInput) {
+        salesSearchInput.addEventListener('input', function(e) {
+            debounceSearch('sales', this.value);
+        });
+        
+        salesSearchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                this.value = '';
+                debounceSearch('sales', '');
+            }
+        });
+    }
+    
+    if (stockSearchInput) {
+        stockSearchInput.addEventListener('input', function(e) {
+            debounceSearch('stock', this.value);
+        });
+        
+        stockSearchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                this.value = '';
+                debounceSearch('stock', '');
+            }
+        });
+    }
+});
 </script>
 {% endblock %}

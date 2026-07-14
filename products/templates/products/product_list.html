@@ -5,7 +5,6 @@
 
 {% block content %}
 <style>
-    /* ===== STATS BAR ===== */
     .stats-bar {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -41,7 +40,6 @@
         letter-spacing: 0.5px;
     }
     
-    /* ===== SEARCH CONTAINER ===== */
     .search-container {
         background: white;
         padding: 1.5rem;
@@ -149,7 +147,6 @@
         border-left: 3px solid #10b981;
     }
     
-    /* ===== DATE FILTER ===== */
     .date-filter {
         margin-bottom: 1.5rem;
         background: white;
@@ -166,7 +163,6 @@
         font-size: 0.95rem;
     }
     
-    /* ===== TABLE ===== */
     .table-container {
         background: white;
         border-radius: 12px;
@@ -210,7 +206,6 @@
         background: #f8f9fa;
     }
     
-    /* ===== BADGES ===== */
     .badge {
         padding: 0.25rem 0.5rem;
         border-radius: 6px;
@@ -224,7 +219,6 @@
     .badge-info { background: #e0f2fe; color: #0369a1; }
     .badge-secondary { background: #f1f5f9; color: #475569; }
     
-    /* ===== EMPTY STATE ===== */
     .empty-state {
         text-align: center;
         padding: 3rem;
@@ -237,7 +231,6 @@
         opacity: 0.5;
     }
     
-    /* ===== MODAL ===== */
     .modal-overlay {
         position: fixed;
         top: 0;
@@ -302,7 +295,6 @@
         box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
     }
     
-    /* ===== TOAST ===== */
     .toast {
         position: fixed;
         top: 20px;
@@ -332,7 +324,6 @@
         }
     }
     
-    /* ===== RESPONSIVE ===== */
     @media (max-width: 768px) {
         .stats-bar {
             grid-template-columns: repeat(2, 1fr);
@@ -345,17 +336,12 @@
     }
 </style>
 
-<!-- ======================================== -->
-<!-- PAGE HEADER -->
-<!-- ======================================== -->
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
     <h1>Product List</h1>
     <a href="{% url 'add_product' %}" class="btn btn-primary">Add Product</a>
 </div>
 
-<!-- ======================================== -->
-<!-- CURRENT VIEW STATUS -->
-<!-- ======================================== -->
+<!-- Current View Status -->
 <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f0fdf4; border-radius: 8px; border: 1px solid #d1fae5; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
     <div>
         <strong style="color: #333;">Current View:</strong> 
@@ -373,9 +359,7 @@
     </div>
 </div>
 
-<!-- ======================================== -->
-<!-- DATE FILTER -->
-<!-- ======================================== -->
+<!-- Date Filter -->
 <div class="date-filter">
     <form method="get" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: end;">
         <div>
@@ -402,9 +386,7 @@
     </form>
 </div>
 
-<!-- ======================================== -->
-<!-- STATISTICS BAR -->
-<!-- ======================================== -->
+<!-- Statistics Bar -->
 <div class="stats-bar">
     <div class="stat-item">
         <div class="stat-value" id="totalInStock">{{ total_in_stock }}</div>
@@ -416,7 +398,7 @@
     </div>
     <div class="stat-item">
         <div class="stat-value" id="totalSalesAmount">₦{{ total_sales_amount|floatformat:2 }}</div>
-        <div class="stat-label">Total Revenue</div>
+        <div class="stat-label">Total Sold Revenue</div>
     </div>
     <div class="stat-item">
         <div class="stat-value" id="totalInventoryValue">₦{{ total_inventory_value|floatformat:2 }}</div>
@@ -424,9 +406,7 @@
     </div>
 </div>
 
-<!-- ======================================== -->
-<!-- SEARCH BAR -->
-<!-- ======================================== -->
+<!-- Search Bar -->
 <div class="search-container">
     <div class="search-wrapper">
         <input type="text" 
@@ -447,9 +427,7 @@
     </div>
 </div>
 
-<!-- ======================================== -->
-<!-- PRODUCTS TABLE -->
-<!-- ======================================== -->
+<!-- Products Table -->
 <div class="table-container">
     <div class="table-header">
         <h3>Products</h3>
@@ -563,9 +541,7 @@
     </div>
 </div>
 
-<!-- ======================================== -->
-<!-- EDIT PRODUCT MODAL -->
-<!-- ======================================== -->
+<!-- Edit Product Modal -->
 <div id="editProductModal" class="modal-overlay" style="display: none;">
     <div class="modal-content">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
@@ -728,9 +704,6 @@
     </div>
 </div>
 
-<!-- ======================================== -->
-<!-- JAVASCRIPT -->
-<!-- ======================================== -->
 <script>
 // ========================================
 // GLOBAL VARIABLES
@@ -999,7 +972,6 @@ function openEditProductModal(productId) {
             branchName: row.dataset.branchName || ''
         };
         
-        // SAFE SET VALUE HELPER
         function setValue(id, value) {
             const el = document.getElementById(id);
             if (el) {
@@ -1069,9 +1041,6 @@ function openEditProductModal(productId) {
     }
 }
 
-// ========================================
-// CLOSE EDIT MODAL
-// ========================================
 function closeEditProductModal() {
     const modal = document.getElementById('editProductModal');
     if (modal) {
@@ -1103,9 +1072,6 @@ function closeEditProductModal() {
     }
 }
 
-// ========================================
-// SUBMIT EDIT FORM
-// ========================================
 document.getElementById('editProductForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
@@ -1147,7 +1113,6 @@ document.getElementById('editProductForm').addEventListener('submit', async func
             
             const row = document.querySelector(`tr[data-product-id="${productId}"]`);
             if (row) {
-                // Update data attributes
                 row.dataset.name = document.getElementById('editProductName').value;
                 row.dataset.categoryId = document.getElementById('editProductCategory').value;
                 row.dataset.supplierId = document.getElementById('editProductSupplier').value;
@@ -1162,7 +1127,6 @@ document.getElementById('editProductForm').addEventListener('submit', async func
                 row.dataset.location = document.getElementById('editProductLocation').value;
                 row.dataset.branchId = document.getElementById('editProductBranch').value;
                 
-                // Update visible cells
                 const cells = row.querySelectorAll('td');
                 cells[1].innerHTML = `<strong>${document.getElementById('editProductName').value}</strong>`;
                 
@@ -1232,9 +1196,6 @@ document.getElementById('editProductForm').addEventListener('submit', async func
     }
 });
 
-// ========================================
-// DELETE PRODUCT
-// ========================================
 function deleteProduct(productId, productName) {
     if (confirm(`Are you sure you want to delete "${productName}"? This action cannot be undone.`)) {
         fetch(`/products/delete/${productId}/`, {
@@ -1261,9 +1222,6 @@ function deleteProduct(productId, productName) {
     }
 }
 
-// ========================================
-// UTILITY FUNCTIONS
-// ========================================
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -1289,9 +1247,6 @@ function showToast(message, type = 'success') {
     }, 3000);
 }
 
-// ========================================
-// CLOSE SUGGESTIONS ON OUTSIDE CLICK
-// ========================================
 document.addEventListener('click', function(e) {
     const searchContainer = document.querySelector('.search-container');
     if (!searchContainer.contains(e.target)) {
@@ -1301,9 +1256,6 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// ========================================
-// INITIALIZE ON PAGE LOAD
-// ========================================
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('productSearch');
     if (searchInput) {

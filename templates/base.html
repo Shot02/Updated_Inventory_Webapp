@@ -599,7 +599,9 @@
                             Dashboard{% if unread_dashboard_count > 0 %}<span class="notification-badge">{{ unread_dashboard_count }}</span>{% endif %}
                         </a>
                         <a href="{% url 'staff_list' %}" class="nav-link {% if '/staff/' in request.path %}active{% endif %}">Staff</a>
-                        <a href="{% url 'branch_list' %}" class="nav-link {% if '/branches/' in request.path %}active{% endif %}">Branches</a>
+                        {% if user.is_superuser or user.role == 'admin' %}
+                            <a href="{% url 'branch_list' %}" class="nav-link {% if '/branches/' in request.path %}active{% endif %}">Branches</a>
+                        {% endif %} 
                     {% endif %}
                 </div>
             </div>
