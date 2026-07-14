@@ -1,4 +1,3 @@
-<!-- refunds/templates/refunds/refund_requests_list.html -->
 {% extends 'base.html' %}
 
 {% block title %}Refund Requests{% endblock %}
@@ -401,83 +400,6 @@
         font-size: 1rem;
     }
     
-    /* Refund Details Modal Specific Styles */
-    .details-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1rem;
-        margin: 1rem 0;
-    }
-    
-    .details-grid .detail-item {
-        padding: 0.5rem;
-        background: #f8f9fa;
-        border-radius: 6px;
-    }
-    
-    .details-grid .detail-item strong {
-        display: block;
-        color: #666;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 0.25rem;
-    }
-    
-    .details-grid .detail-item span {
-        font-size: 1rem;
-        color: #333;
-    }
-    
-    .details-grid .detail-item .status-badge {
-        margin-top: 0.25rem;
-    }
-    
-    .refund-reason-box {
-        background: #f8f9fa;
-        padding: 1rem;
-        border-radius: 6px;
-        margin-top: 1rem;
-        border-left: 4px solid #667eea;
-    }
-    
-    .refund-reason-box strong {
-        display: block;
-        color: #666;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 0.5rem;
-    }
-    
-    .refund-reason-box p {
-        margin: 0;
-        color: #333;
-        line-height: 1.6;
-    }
-    
-    .approval-info {
-        background: #d1fae5;
-        padding: 1rem;
-        border-radius: 6px;
-        margin-top: 1rem;
-        border-left: 4px solid #10b981;
-    }
-    
-    .approval-info strong {
-        display: block;
-        color: #065f46;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 0.5rem;
-    }
-    
-    .approval-info p {
-        margin: 0;
-        color: #065f46;
-    }
-    
     /* Modal Styles */
     .modal-overlay {
         position: fixed;
@@ -587,28 +509,6 @@
     .toast-info { background: #667eea; }
     .toast-warning { background: #ed8936; }
     
-    @keyframes slideIn {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-    
-    @keyframes slideOut {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-    }
-    
     /* Responsive Design */
     @media (max-width: 1024px) {
         .action-buttons {
@@ -669,6 +569,93 @@
             flex-direction: row;
             justify-content: flex-start;
         }
+    }
+    
+    .details-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin: 1rem 0;
+    }
+    
+    .details-grid .detail-item {
+        padding: 0.5rem;
+        background: #f8f9fa;
+        border-radius: 6px;
+    }
+    
+    .details-grid .detail-item strong {
+        display: block;
+        color: #666;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.25rem;
+    }
+    
+    .details-grid .detail-item span {
+        font-size: 1rem;
+        color: #333;
+    }
+    
+    .refund-reason-box {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 6px;
+        margin-top: 1rem;
+        border-left: 4px solid #667eea;
+    }
+    
+    .refund-reason-box strong {
+        display: block;
+        color: #666;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
+    }
+    
+    .refund-reason-box p {
+        margin: 0;
+        color: #333;
+        line-height: 1.6;
+    }
+    
+    .approval-info {
+        background: #d1fae5;
+        padding: 1rem;
+        border-radius: 6px;
+        margin-top: 1rem;
+        border-left: 4px solid #10b981;
+    }
+    
+    .approval-info strong {
+        display: block;
+        color: #065f46;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
+    }
+    
+    .approval-info p {
+        margin: 0;
+        color: #065f46;
+    }
+    
+    .spinner {
+        display: inline-block;
+        width: 40px;
+        height: 40px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
     }
 </style>
 
@@ -731,16 +718,13 @@
     <div class="search-wrapper">
         <input type="text" 
                class="search-input"
-               id="refundSearchInput"
-               placeholder="Search refund requests..."
-               autofocus>
+               id="refundSearch"
+               placeholder="Search refund requests by customer, invoice, status..."
+               value="">
         <div id="refundSearchCount" class="search-result-count"></div>
     </div>
-    
     <div class="search-tips">
-        <small>
-            <strong>Search tips:</strong> Search by customer name, phone number, invoice number, or status (pending/approved/declined)
-        </small>
+        <small>Search: Type customer name, phone number, invoice number, or status (pending/approved/declined)</small>
     </div>
 </div>
 
@@ -977,6 +961,7 @@ function showToast(message, type = 'success') {
 
 // Format date helper
 function formatDate(dateString) {
+    if (!dateString) return 'N/A';
     try {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-US', {
@@ -1038,18 +1023,20 @@ async function confirmApproveRefund() {
     approveBtn.innerHTML = 'Processing...';
     
     try {
-        const response = await fetch(`/refunds/requests/approve/${currentRefundId}/`, {
+        const response = await fetch(`/refunds/approve/${currentRefundId}/`, {
             method: 'POST',
             headers: {
                 'X-CSRFToken': getCookie('csrftoken')
             }
         });
+        
         if (response.ok) {
             showToast('Refund approved successfully!', 'success');
             closeApproveRefundModal();
             setTimeout(() => location.reload(), 1500);
         } else {
-            showToast('Failed to approve refund', 'error');
+            const data = await response.json();
+            showToast(data.error || 'Failed to approve refund', 'error');
             approveBtn.disabled = false;
             approveBtn.innerHTML = 'Approve Refund';
         }
@@ -1090,18 +1077,20 @@ async function confirmDeclineRefund() {
     declineBtn.innerHTML = 'Processing...';
     
     try {
-        const response = await fetch(`/refunds/requests/decline/${currentRefundId}/`, {
+        const response = await fetch(`/refunds/decline/${currentRefundId}/`, {
             method: 'POST',
             headers: {
                 'X-CSRFToken': getCookie('csrftoken')
             }
         });
+        
         if (response.ok) {
             showToast('Refund declined successfully!', 'success');
             closeDeclineRefundModal();
             setTimeout(() => location.reload(), 1500);
         } else {
-            showToast('Failed to decline refund', 'error');
+            const data = await response.json();
+            showToast(data.error || 'Failed to decline refund', 'error');
             declineBtn.disabled = false;
             declineBtn.innerHTML = 'Decline Refund';
         }
@@ -1142,18 +1131,20 @@ async function confirmDeleteRefund() {
     deleteBtn.innerHTML = 'Processing...';
     
     try {
-        const response = await fetch(`/refunds/requests/delete/${currentRefundId}/`, {
+        const response = await fetch(`/refunds/delete/${currentRefundId}/`, {
             method: 'POST',
             headers: {
                 'X-CSRFToken': getCookie('csrftoken')
             }
         });
+        
         if (response.ok) {
             showToast('Refund request deleted successfully!', 'success');
             closeDeleteRefundModal();
             setTimeout(() => location.reload(), 1500);
         } else {
-            showToast('Failed to delete refund request', 'error');
+            const data = await response.json();
+            showToast(data.error || 'Failed to delete refund request', 'error');
             deleteBtn.disabled = false;
             deleteBtn.innerHTML = 'Delete Request';
         }
@@ -1170,13 +1161,18 @@ async function viewRefundDetails(refundId) {
     try {
         document.getElementById('refundDetailsContent').innerHTML = `
             <div style="text-align: center; padding: 2rem;">
-                <div class="spinner" style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                <div class="spinner"></div>
                 <p style="margin-top: 1rem; color: #666;">Loading refund details...</p>
             </div>
         `;
         document.getElementById('refundDetailsModal').style.display = 'flex';
         
-        const response = await fetch(`/refunds/api/refund-details/${refundId}/`);
+        const response = await fetch(`/refunds/api/details/${refundId}/`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
         
         if (data.success) {
@@ -1267,6 +1263,9 @@ async function viewRefundDetails(refundId) {
             <div style="text-align: center; padding: 2rem; color: #dc2626;">
                 <h4>Network Error</h4>
                 <p>Unable to load refund details. Please check your connection.</p>
+                <button onclick="viewRefundDetails(${refundId})" class="btn btn-primary" style="margin-top: 1rem;">
+                    Retry
+                </button>
             </div>
         `;
     }
@@ -1287,58 +1286,91 @@ function debounceRefundSearch() {
     }, 300);
 }
 
-function performRefundSearch() {
-    const searchTerm = document.getElementById('refundSearchInput').value.trim().toLowerCase();
+async function performRefundSearch() {
+    const searchTerm = document.getElementById('refundSearch').value.trim();
     const searchCount = document.getElementById('refundSearchCount');
     
     if (!searchTerm) {
-        document.querySelectorAll('#refundTableBody tr').forEach(row => {
-            row.style.display = '';
-        });
-        searchCount.style.display = 'none';
+        // If search is empty, reload the page to show all
+        window.location.href = "{% url 'refund_requests_list' %}";
         return;
     }
     
-    let foundCount = 0;
-    document.querySelectorAll('#refundTableBody tr').forEach(row => {
-        const cells = row.querySelectorAll('td');
-        if (cells.length >= 11) {
-            const customer = cells[1].textContent.toLowerCase();
-            const phone = cells[2].textContent.toLowerCase();
-            const invoice = row.dataset.saleInvoice ? row.dataset.saleInvoice.toLowerCase() : '';
-            const status = cells[7].textContent.toLowerCase();
-            const reason = cells[4].textContent.toLowerCase();
-            const requestId = cells[0].textContent.toLowerCase();
-            const amount = cells[5].textContent.toLowerCase();
-            const branch = cells[9].textContent.toLowerCase();
-            
-            if (customer.includes(searchTerm) || 
-                phone.includes(searchTerm) || 
-                invoice.includes(searchTerm) || 
-                status.includes(searchTerm) ||
-                reason.includes(searchTerm) ||
-                requestId.includes(searchTerm) ||
-                amount.includes(searchTerm) ||
-                branch.includes(searchTerm)) {
-                row.style.display = '';
-                foundCount++;
+    try {
+        const response = await fetch(`/refunds/api/search/?q=${encodeURIComponent(searchTerm)}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            updateRefundTable(data.results);
+            if (data.count > 0) {
+                searchCount.innerHTML = `<small>${data.count} found</small>`;
+                searchCount.style.display = 'block';
             } else {
-                row.style.display = 'none';
+                searchCount.style.display = 'none';
             }
         }
-    });
-    
-    if (foundCount > 0) {
-        searchCount.innerHTML = `${foundCount} found`;
-        searchCount.style.display = 'block';
-    } else {
-        searchCount.style.display = 'none';
+    } catch (error) {
+        console.error('Search error:', error);
+        // Fallback: redirect to search with query
+        window.location.href = "{% url 'refund_requests_list' %}?search=" + encodeURIComponent(searchTerm);
     }
+}
+
+function updateRefundTable(results) {
+    const tableBody = document.getElementById('refundTableBody');
+    
+    if (results.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="11">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔍</div>
+                        <h3>No Refunds Found</h3>
+                        <p>No refund requests match your search</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    let html = '';
+    results.forEach(refund => {
+        let statusBadge = '';
+        if (refund.status === 'pending') {
+            statusBadge = '<span class="status-badge status-pending">Pending</span>';
+        } else if (refund.status === 'approved') {
+            statusBadge = '<span class="status-badge status-approved">Approved</span>';
+        } else {
+            statusBadge = '<span class="status-badge status-declined">Declined</span>';
+        }
+        
+        html += `
+            <tr>
+                <td><strong>#${refund.id}</strong></td>
+                <td>${refund.customer_name}</td>
+                <td>${refund.customer_phone}</td>
+                <td>${refund.sale_invoice || 'Not linked'}</td>
+                <td>${refund.reason}</td>
+                <td><strong>₦${refund.amount.toFixed(2)}</strong></td>
+                <td>${formatDate(refund.request_date)}</td>
+                <td>${statusBadge}</td>
+                <td>${refund.created_by}</td>
+                <td>${refund.branch_name || 'No Branch'}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button onclick="viewRefundDetails(${refund.id})" class="btn btn-info btn-sm">View</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+    tableBody.innerHTML = html;
 }
 
 // ==================== INITIALIZATION ====================
 document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('refundSearchInput');
+    const searchInput = document.getElementById('refundSearch');
     if (searchInput) {
         searchInput.addEventListener('input', debounceRefundSearch);
         searchInput.addEventListener('keydown', function(e) {
@@ -1350,6 +1382,7 @@ document.addEventListener('DOMContentLoaded', function() {
         searchInput.focus();
     }
     
+    // Close modals on overlay click
     document.querySelectorAll('.modal-overlay').forEach(modal => {
         modal.addEventListener('click', function(e) {
             if (e.target === this) {
@@ -1361,6 +1394,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
+    // Close modals on Escape key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             if (document.getElementById('approveRefundModal').style.display === 'flex') closeApproveRefundModal();

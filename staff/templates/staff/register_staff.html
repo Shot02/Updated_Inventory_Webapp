@@ -140,9 +140,10 @@
                         <select id="id_role" name="role" class="form-control" required>
                             <option value="">-- Select Role --</option>
                             {% for role_value, role_label in form.fields.role.choices %}
-                            <option value="{{ role_value }}" {% if form.role.value == role_value %}selected{% endif %}>
-                                {{ role_label }}
-                            </option>
+                                <option value="{{ role_value }}" 
+                                        {% if form.role.value == role_value %}selected{% endif %}>
+                                    {{ role_label }}
+                                </option>
                             {% endfor %}
                         </select>
                     </div>

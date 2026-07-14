@@ -4,6 +4,8 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q, Sum
+from django.utils import timezone
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 # inventoryApp imports
@@ -108,11 +110,14 @@ def refund_requests_list(request):
 def refund_details_api(request, pk):
     """API endpoint to get refund details"""
     try:
+        # Get the refund request
         refund = RefundRequest.objects.get(id=pk)
         
+        # Check permission
         if not (refund.created_by == request.user or request.user.role == 'admin' or request.user.is_superuser):
             return JsonResponse({'success': False, 'error': 'Access denied'})
         
+        # Format the data
         refund_data = {
             'id': refund.id,
             'customer_name': refund.customer_name,
@@ -132,8 +137,11 @@ def refund_details_api(request, pk):
     except RefundRequest.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Refund not found'})
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return JsonResponse({'success': False, 'error': str(e)})
-
+    
+    
 @login_required
 def create_refund_request(request):
     """Create new refund request with transaction selection - filtered by branch"""
@@ -501,3 +509,327 @@ def delete_refund_request(request, pk):
             return JsonResponse({'success': False, 'error': str(e)})
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@login_required
+def recent_sales_stats_api(request):
+    """API endpoint to get recent sales stats for refund creation"""
+    today = timezone.now().date()
+    week_ago = today - timedelta(days=7)
+    
+    # Get current branch
+    current_branch = None
+    if request.user.is_superuser or request.user.role == 'admin':
+        branch_id = request.session.get('current_branch_id')
+        if branch_id:
+            try:
+                current_branch = Branch.objects.get(id=branch_id)
+            except Branch.DoesNotExist:
+                current_branch = None
+    else:
+        current_branch = request.user.branch
+    
+    # Base query
+    sales_query = Sale.objects.all()
+    if current_branch:
+        sales_query = sales_query.filter(branch=current_branch)
+    elif not (request.user.is_superuser or request.user.role == 'admin'):
+        sales_query = sales_query.none()
+    
+    # Calculate stats
+    today_sales = sales_query.filter(created_at__date=today).count()
+    week_sales = sales_query.filter(created_at__date__gte=week_ago).count()
+    staff_sales = sales_query.filter(staff=request.user, created_at__date=today).count()
+    
+    # Calculate total refundable amount (sum of amount_paid for today's sales)
+    today_sales_query = sales_query.filter(created_at__date=today)
+    total_refundable = today_sales_query.aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
+    
+    return JsonResponse({
+        'success': True,
+        'today_count': today_sales,
+        'week_count': week_sales,
+        'staff_count': staff_sales,
+        'total_refundable': float(total_refundable),
+    })
+
+@login_required
+def recent_sales_api(request):
+    """API endpoint to get recent sales (last 24 hours) for refund creation"""
+    try:
+        # Get current branch
+        current_branch = None
+        if request.user.is_superuser or request.user.role == 'admin':
+            branch_id = request.session.get('current_branch_id')
+            if branch_id:
+                try:
+                    current_branch = Branch.objects.get(id=branch_id)
+                except Branch.DoesNotExist:
+                    current_branch = None
+        else:
+            current_branch = request.user.branch
+        
+        # Get sales from last 24 hours
+        yesterday = timezone.now() - timedelta(days=1)
+        sales = Sale.objects.filter(
+            created_at__gte=yesterday
+        ).select_related('staff').prefetch_related('items').order_by('-created_at')[:20]
+        
+        # Filter by branch
+        if current_branch:
+            sales = sales.filter(branch=current_branch)
+        elif not (request.user.is_superuser or request.user.role == 'admin'):
+            sales = sales.none()
+        
+        # Format sales data
+        sales_data = []
+        for sale in sales:
+            staff_name = sale.staff.username if sale.staff else 'Unknown Staff'
+            staff_full_name = f"{sale.staff.first_name or ''} {sale.staff.last_name or ''}".strip() if sale.staff else 'Unknown'
+            
+            items_data = []
+            for item in sale.items.all():
+                items_data.append({
+                    'id': item.id,
+                    'name': item.product_name,
+                    'quantity': item.quantity,
+                    'price': float(item.price),
+                    'discount': float(item.discount),
+                    'total': float(item.total),
+                })
+            
+            sales_data.append({
+                'id': sale.id,
+                'invoice_number': sale.invoice_number,
+                'customer_name': sale.customer_name or 'Walk-in Customer',
+                'customer_phone': sale.customer_phone or '',
+                'staff_name': staff_name,
+                'staff_full_name': staff_full_name,
+                'total': float(sale.total),
+                'amount_paid': float(sale.amount_paid),
+                'balance': float(sale.balance),
+                'payment_status': sale.payment_status,
+                'created_at': sale.created_at.isoformat(),
+                'formatted_date': sale.created_at.strftime('%b %d, %I:%M %p'),
+                'items': items_data,
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'sales': sales_data,
+            'count': len(sales_data),
+            'current_branch': current_branch.name if current_branch else 'All Branches'
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+            'sales': []
+        })
+
+@login_required
+def sale_details_api(request, pk):
+    """API endpoint to get sale details for refund selection"""
+    try:
+        sale = Sale.objects.select_related('staff').prefetch_related('items').get(id=pk)
+        
+        items_data = []
+        for item in sale.items.all():
+            items_data.append({
+                'id': item.id,
+                'name': item.product_name,
+                'quantity': item.quantity,
+                'price': float(item.price),
+                'discount': float(item.discount),
+                'total': float(item.total),
+            })
+        
+        sale_data = {
+            'id': sale.id,
+            'invoice_number': sale.invoice_number,
+            'customer_name': sale.customer_name,
+            'customer_phone': sale.customer_phone,
+            'staff_name': sale.staff.username,
+            'staff_full_name': f"{sale.staff.first_name or ''} {sale.staff.last_name or ''}".strip(),
+            'total': float(sale.total),
+            'amount_paid': float(sale.amount_paid),
+            'balance': float(sale.balance),
+            'payment_status': sale.payment_status,
+            'created_at': sale.created_at.isoformat(),
+            'formatted_date': sale.created_at.strftime('%b %d, %Y %I:%M %p'),
+            'items': items_data,
+        }
+        
+        return JsonResponse({
+            'success': True,
+            'sale': sale_data,
+        })
+        
+    except Sale.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Sale not found',
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+        })
+
+@login_required
+def all_sales_api(request):
+    """API endpoint to get all sales for modal (paginated)"""
+    try:
+        page = int(request.GET.get('page', 1))
+        page_size = 20
+        
+        # Get current branch
+        current_branch = None
+        if request.user.is_superuser or request.user.role == 'admin':
+            branch_id = request.session.get('current_branch_id')
+            if branch_id:
+                try:
+                    current_branch = Branch.objects.get(id=branch_id)
+                except Branch.DoesNotExist:
+                    current_branch = None
+        else:
+            current_branch = request.user.branch
+        
+        # Base query
+        sales_query = Sale.objects.all().select_related('staff').prefetch_related('items').order_by('-created_at')
+        
+        # Filter by branch
+        if current_branch:
+            sales_query = sales_query.filter(branch=current_branch)
+        elif not (request.user.is_superuser or request.user.role == 'admin'):
+            sales_query = sales_query.none()
+        
+        # Paginate
+        start = (page - 1) * page_size
+        end = start + page_size
+        total_count = sales_query.count()
+        sales = sales_query[start:end]
+        
+        # Check if there are more results
+        has_more = end < total_count
+        
+        # Format sales data
+        sales_data = []
+        for sale in sales:
+            sales_data.append({
+                'id': sale.id,
+                'invoice_number': sale.invoice_number,
+                'customer_name': sale.customer_name or 'Walk-in Customer',
+                'customer_phone': sale.customer_phone or '',
+                'staff_name': sale.staff.username if sale.staff else 'Unknown',
+                'total': float(sale.total),
+                'amount_paid': float(sale.amount_paid),
+                'balance': float(sale.balance),
+                'payment_status': sale.payment_status,
+                'created_at': sale.created_at.isoformat(),
+                'formatted_date': sale.created_at.strftime('%b %d, %I:%M %p'),
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'sales': sales_data,
+            'count': len(sales_data),
+            'total_count': total_count,
+            'has_more': has_more,
+            'current_page': page,
+            'current_branch': current_branch.name if current_branch else 'All Branches'
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+            'sales': []
+        })
+
+@login_required
+def search_all_sales_api(request):
+    """API endpoint to search all sales"""
+    try:
+        search_term = request.GET.get('q', '').strip()
+        page = int(request.GET.get('page', 1))
+        page_size = 20
+        
+        # Get current branch
+        current_branch = None
+        if request.user.is_superuser or request.user.role == 'admin':
+            branch_id = request.session.get('current_branch_id')
+            if branch_id:
+                try:
+                    current_branch = Branch.objects.get(id=branch_id)
+                except Branch.DoesNotExist:
+                    current_branch = None
+        else:
+            current_branch = request.user.branch
+        
+        # Base query
+        sales_query = Sale.objects.all().select_related('staff').prefetch_related('items').order_by('-created_at')
+        
+        # Filter by branch
+        if current_branch:
+            sales_query = sales_query.filter(branch=current_branch)
+        elif not (request.user.is_superuser or request.user.role == 'admin'):
+            sales_query = sales_query.none()
+        
+        # Filter by search term
+        if search_term:
+            sales_query = sales_query.filter(
+                Q(invoice_number__icontains=search_term) |
+                Q(customer_name__icontains=search_term) |
+                Q(customer_phone__icontains=search_term) |
+                Q(staff__username__icontains=search_term)
+            )
+        
+        # Paginate
+        start = (page - 1) * page_size
+        end = start + page_size
+        total_count = sales_query.count()
+        sales = sales_query[start:end]
+        
+        # Check if there are more results
+        has_more = end < total_count
+        
+        # Format sales data
+        sales_data = []
+        for sale in sales:
+            sales_data.append({
+                'id': sale.id,
+                'invoice_number': sale.invoice_number,
+                'customer_name': sale.customer_name or 'Walk-in Customer',
+                'customer_phone': sale.customer_phone or '',
+                'staff_name': sale.staff.username if sale.staff else 'Unknown',
+                'total': float(sale.total),
+                'amount_paid': float(sale.amount_paid),
+                'balance': float(sale.balance),
+                'payment_status': sale.payment_status,
+                'created_at': sale.created_at.isoformat(),
+                'formatted_date': sale.created_at.strftime('%b %d, %I:%M %p'),
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'sales': sales_data,
+            'count': len(sales_data),
+            'total_count': total_count,
+            'has_more': has_more,
+            'current_page': page,
+            'current_branch': current_branch.name if current_branch else 'All Branches'
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+            'sales': []
+        })

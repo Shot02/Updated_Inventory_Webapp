@@ -194,7 +194,14 @@
         <h2>NIG ENTERPRISES</h2>
         <h2>SALES RECEIPT</h2>
         <p style="font-size: 1.2rem;"><strong>Invoice: {{ sale.invoice_number }}</strong></p>
-        <p style="font-size: 1rem; color: #666;"><strong>Branch:</strong> {{ sale.branch.name|default:"N/A" }}</p>
+        <p style="font-size: 1rem; color: #666;">
+            <strong>Branch:</strong> 
+            {% if sale.branch %}
+                {{ sale.branch.name }} ({{ sale.branch.code }})
+            {% else %}
+                <span style="color: #999;">N/A</span>
+            {% endif %}
+        </p>
     </div>
     
     <div class="receipt-info">
@@ -207,6 +214,7 @@
                     {{ sale.payment_status|title }}
                 </span>
             </p>
+            <p><strong>Branch:</strong> {{ sale.branch.name|default:"N/A" }}</p>
         </div>
         <div class="info-section" style="text-align: right;">
             <h3>Transaction Details</h3>

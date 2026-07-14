@@ -5,6 +5,7 @@
 
 {% block content %}
 <style>
+    /* ===== STATS BAR ===== */
     .stats-bar {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -40,6 +41,7 @@
         letter-spacing: 0.5px;
     }
     
+    /* ===== SEARCH CONTAINER ===== */
     .search-container {
         background: white;
         padding: 1.5rem;
@@ -147,6 +149,24 @@
         border-left: 3px solid #10b981;
     }
     
+    /* ===== DATE FILTER ===== */
+    .date-filter {
+        margin-bottom: 1.5rem;
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .date-filter select,
+    .date-filter input {
+        padding: 0.5rem;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        font-size: 0.95rem;
+    }
+    
+    /* ===== TABLE ===== */
     .table-container {
         background: white;
         border-radius: 12px;
@@ -190,6 +210,7 @@
         background: #f8f9fa;
     }
     
+    /* ===== BADGES ===== */
     .badge {
         padding: 0.25rem 0.5rem;
         border-radius: 6px;
@@ -203,6 +224,7 @@
     .badge-info { background: #e0f2fe; color: #0369a1; }
     .badge-secondary { background: #f1f5f9; color: #475569; }
     
+    /* ===== EMPTY STATE ===== */
     .empty-state {
         text-align: center;
         padding: 3rem;
@@ -215,31 +237,125 @@
         opacity: 0.5;
     }
     
-    .date-filter {
+    /* ===== MODAL ===== */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 1000;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        backdrop-filter: blur(3px);
+    }
+    
+    .modal-content {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        width: 700px;
+        max-width: 95%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        animation: modalFadeIn 0.3s ease-out;
+    }
+    
+    @keyframes modalFadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .form-group {
         margin-bottom: 1rem;
     }
     
-    .date-filter select,
-    .date-filter input {
-        padding: 0.5rem;
+    .form-group label {
+        display: block;
+        margin-bottom: 0.3rem;
+        font-weight: 500;
+        color: #333;
+        font-size: 0.9rem;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 0.6rem 0.75rem;
         border: 1px solid #e0e0e0;
         border-radius: 6px;
         font-size: 0.95rem;
+        transition: all 0.3s;
     }
     
+    .form-control:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+    }
+    
+    /* ===== TOAST ===== */
+    .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        z-index: 10000;
+        color: white;
+        font-weight: 500;
+        animation: slideIn 0.3s ease-out;
+    }
+    
+    .toast-success { background: #48bb78; }
+    .toast-error { background: #f56565; }
+    .toast-info { background: #667eea; }
+    .toast-warning { background: #ed8936; }
+    
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    /* ===== RESPONSIVE ===== */
     @media (max-width: 768px) {
         .stats-bar {
             grid-template-columns: repeat(2, 1fr);
         }
+        
+        .modal-content {
+            width: 100%;
+            padding: 1rem;
+        }
     }
 </style>
 
+<!-- ======================================== -->
+<!-- PAGE HEADER -->
+<!-- ======================================== -->
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
     <h1>Product List</h1>
     <a href="{% url 'add_product' %}" class="btn btn-primary">Add Product</a>
 </div>
 
-<!-- Current View Status -->
+<!-- ======================================== -->
+<!-- CURRENT VIEW STATUS -->
+<!-- ======================================== -->
 <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f0fdf4; border-radius: 8px; border: 1px solid #d1fae5; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
     <div>
         <strong style="color: #333;">Current View:</strong> 
@@ -257,7 +373,9 @@
     </div>
 </div>
 
-<!-- Date Filter -->
+<!-- ======================================== -->
+<!-- DATE FILTER -->
+<!-- ======================================== -->
 <div class="date-filter">
     <form method="get" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: end;">
         <div>
@@ -284,7 +402,9 @@
     </form>
 </div>
 
-<!-- Statistics Bar -->
+<!-- ======================================== -->
+<!-- STATISTICS BAR -->
+<!-- ======================================== -->
 <div class="stats-bar">
     <div class="stat-item">
         <div class="stat-value" id="totalInStock">{{ total_in_stock }}</div>
@@ -304,7 +424,9 @@
     </div>
 </div>
 
-<!-- Search Bar -->
+<!-- ======================================== -->
+<!-- SEARCH BAR -->
+<!-- ======================================== -->
 <div class="search-container">
     <div class="search-wrapper">
         <input type="text" 
@@ -325,7 +447,9 @@
     </div>
 </div>
 
-<!-- Products Table -->
+<!-- ======================================== -->
+<!-- PRODUCTS TABLE -->
+<!-- ======================================== -->
 <div class="table-container">
     <div class="table-header">
         <h3>Products</h3>
@@ -358,7 +482,25 @@
             </thead>
             <tbody id="productTableBody">
                 {% for product in products %}
-                <tr data-product-id="{{ product.id }}">
+                <tr data-product-id="{{ product.id }}"
+                    data-name="{{ product.name }}"
+                    data-sku="{{ product.sku }}"
+                    data-category-id="{{ product.category.id|default:'' }}"
+                    data-category-name="{{ product.category.name|default:'' }}"
+                    data-supplier-id="{{ product.supplier.id|default:'' }}"
+                    data-supplier-name="{{ product.supplier.name|default:'' }}"
+                    data-description="{{ product.description|default:'' }}"
+                    data-price="{{ product.price|floatformat:2 }}"
+                    data-cost-price="{{ product.cost_price|floatformat:2 }}"
+                    data-quantity="{{ product.quantity }}"
+                    data-reorder-level="{{ product.reorder_level }}"
+                    data-expiry-date="{% if product.expiry_date %}{{ product.expiry_date|date:'Y-m-d' }}{% endif %}"
+                    data-manufacturing-date="{% if product.manufacturing_date %}{{ product.manufacturing_date|date:'Y-m-d' }}{% endif %}"
+                    data-batch-number="{{ product.batch_number|default:'' }}"
+                    data-location="{{ product.location|default:'' }}"
+                    data-image-url="{% if product.image and product.image.url %}{{ product.image.url }}{% endif %}"
+                    data-branch-id="{{ product.branch.id|default:'' }}"
+                    data-branch-name="{{ product.branch.name|default:'' }}">
                     <td>
                         {% if product.image %}
                             <img src="{{ product.image.url }}" style="width:50px; height:50px; object-fit:cover; border-radius:6px;" alt="{{ product.name }}">
@@ -421,13 +563,185 @@
     </div>
 </div>
 
+<!-- ======================================== -->
+<!-- EDIT PRODUCT MODAL -->
+<!-- ======================================== -->
+<div id="editProductModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3 style="margin: 0; font-size: 1.3rem; color: #dc2626;">Edit Product</h3>
+            <button onclick="closeEditProductModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #666;">&times;</button>
+        </div>
+        
+        <form id="editProductForm" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" id="editProductId" name="product_id">
+            
+            <!-- BASIC INFO -->
+            <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #dc2626;">
+                <h4 style="margin: 0 0 1rem 0; color: #dc2626;">Basic Information</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="editProductName">Product Name</label>
+                        <input type="text" id="editProductName" name="name" class="form-control" placeholder="Product name">
+                    </div>
+                    <div class="form-group">
+                        <label for="editProductSKU">SKU</label>
+                        <input type="text" id="editProductSKU" class="form-control" disabled style="background: #f8f9fa; color: #666;">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="editProductDescription">Description</label>
+                    <textarea id="editProductDescription" name="description" class="form-control" rows="3" placeholder="Product description"></textarea>
+                </div>
+            </div>
+            
+            <!-- CATEGORY & SUPPLIER -->
+            <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #dc2626;">
+                <h4 style="margin: 0 0 1rem 0; color: #dc2626;">Category & Supplier</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="editProductCategory">Category</label>
+                        <select id="editProductCategory" name="category" class="form-control">
+                            <option value="">-- Select Category --</option>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <input type="text" id="editNewCategory" name="new_category" class="form-control" style="margin-top: 0.5rem;" placeholder="Or enter new category name">
+                    </div>
+                    <div class="form-group">
+                        <label for="editProductSupplier">Supplier</label>
+                        <select id="editProductSupplier" name="supplier" class="form-control">
+                            <option value="">-- Select Supplier --</option>
+                            {% for supplier in suppliers %}
+                            <option value="{{ supplier.id }}">{{ supplier.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <input type="text" id="editNewSupplier" name="new_supplier" class="form-control" style="margin-top: 0.5rem;" placeholder="Or enter new supplier name">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- EXPIRY & BATCH -->
+            <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #dc2626;">
+                <h4 style="margin: 0 0 1rem 0; color: #dc2626;">Expiry & Batch Information</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="editProductManufacturingDate">Manufacturing Date</label>
+                        <input type="date" id="editProductManufacturingDate" name="manufacturing_date" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="editProductExpiryDate">Expiry Date</label>
+                        <input type="date" id="editProductExpiryDate" name="expiry_date" class="form-control">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="editProductBatchNumber">Batch Number</label>
+                        <input type="text" id="editProductBatchNumber" name="batch_number" class="form-control" placeholder="Batch/Lot number">
+                    </div>
+                    <div class="form-group">
+                        <label for="editProductLocation">Location/Shelf</label>
+                        <input type="text" id="editProductLocation" name="location" class="form-control" placeholder="e.g., Shelf A1, Rack 2">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- BRANCH -->
+            <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #dc2626;">
+                <h4 style="margin: 0 0 1rem 0; color: #dc2626;">Branch</h4>
+                <div class="form-group">
+                    <label for="editProductBranch">Branch</label>
+                    <select id="editProductBranch" name="branch" class="form-control">
+                        <option value="">-- Select Branch --</option>
+                        {% for branch in all_branches %}
+                        <option value="{{ branch.id }}">{{ branch.name }} ({{ branch.code }})</option>
+                        {% endfor %}
+                    </select>
+                    <small style="display: block; margin-top: 0.3rem; color: #666; font-size: 0.85rem;">Select the branch where this product belongs</small>
+                </div>
+            </div>
+            
+            <!-- PRICING & STOCK -->
+            <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #dc2626;">
+                <h4 style="margin: 0 0 1rem 0; color: #dc2626;">Pricing & Stock</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="editProductPrice">Selling Price (&#8358;)</label>
+                        <input type="number" id="editProductPrice" name="price" class="form-control" step="0.01" min="0" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="editProductCostPrice">Cost Price (&#8358;)</label>
+                        <input type="number" id="editProductCostPrice" name="cost_price" class="form-control" step="0.01" min="0" placeholder="0.00">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="editProductQuantity">Quantity in Stock</label>
+                        <input type="number" id="editProductQuantity" name="quantity" class="form-control" min="0" placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="editProductReorderLevel">Reorder Level</label>
+                        <input type="number" id="editProductReorderLevel" name="reorder_level" class="form-control" min="0" placeholder="10">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="checkbox" id="editProductIsActive" name="is_active" value="1" checked>
+                        <span>Product is Active</span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- IMAGE -->
+            <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                <h4 style="margin: 0 0 1rem 0; color: #dc2626;">Product Image</h4>
+                <div class="form-group">
+                    <label for="editProductImage">Product Image</label>
+                    <input type="file" id="editProductImage" name="image" class="form-control" accept="image/*">
+                    <div style="margin-top: 1rem;">
+                        <p style="margin-bottom: 0.5rem; font-weight: 500;">Current Image:</p>
+                        <div id="currentImageContainer" style="width: 120px; height: 120px; background: #f8f9fa; border: 1px dashed #ddd; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 0.85rem;">
+                            <span>No image</span>
+                        </div>
+                        <div style="margin-top: 0.5rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" id="editClearImage" name="clear_image" value="1">
+                                <span>Remove current image</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- SUBMIT -->
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button type="submit" class="btn btn-success" style="flex: 1; padding: 0.75rem; background: #10b981;" id="editProductSubmitBtn">
+                    Save Changes
+                </button>
+                <button type="button" onclick="closeEditProductModal()" class="btn btn-danger" style="padding: 0.75rem 1.5rem; background: #dc2626;">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ======================================== -->
+<!-- JAVASCRIPT -->
+<!-- ======================================== -->
 <script>
-// Global variables
+// ========================================
+// GLOBAL VARIABLES
+// ========================================
 let searchTimeout;
 let selectedSuggestionIndex = -1;
 let currentSuggestions = [];
 
-// ==================== SEARCH FUNCTIONALITY ====================
+// ========================================
+// SEARCH FUNCTIONALITY
+// ========================================
 document.getElementById('productSearch').addEventListener('input', function() {
     clearTimeout(searchTimeout);
     const query = this.value.trim();
@@ -435,7 +749,6 @@ document.getElementById('productSearch').addEventListener('input', function() {
     if (query.length < 1) {
         document.getElementById('searchSuggestions').style.display = 'none';
         document.getElementById('searchCount').style.display = 'none';
-        // Reset to show all products
         resetToAllProducts();
         return;
     }
@@ -461,7 +774,6 @@ document.getElementById('productSearch').addEventListener('keydown', function(e)
         if (selectedSuggestionIndex >= 0 && selectedSuggestionIndex < currentSuggestions.length) {
             filterByProduct(currentSuggestions[selectedSuggestionIndex].id);
         } else {
-            // Submit search - filter by search term
             performSearch(this.value.trim(), true);
         }
     } else if (e.key === 'Escape') {
@@ -469,16 +781,6 @@ document.getElementById('productSearch').addEventListener('keydown', function(e)
         document.getElementById('searchCount').style.display = 'none';
         selectedSuggestionIndex = -1;
         resetToAllProducts();
-    }
-});
-
-// Close suggestions when clicking outside
-document.addEventListener('click', function(e) {
-    const searchContainer = document.querySelector('.search-container');
-    if (!searchContainer.contains(e.target)) {
-        document.getElementById('searchSuggestions').style.display = 'none';
-        document.getElementById('searchCount').style.display = 'none';
-        selectedSuggestionIndex = -1;
     }
 });
 
@@ -499,14 +801,14 @@ async function performSearch(query, submit = false) {
         
         if (data.success) {
             if (submit) {
-                // Submit the search - filter table by search term
-                filterTableBySearch(query);
-                document.getElementById('searchSuggestions').style.display = 'none';
-                document.getElementById('searchCount').style.display = 'none';
+                let redirectUrl = window.location.pathname + `?search=${encodeURIComponent(query)}`;
+                if (dateFilter) redirectUrl += `&date_filter=${dateFilter}`;
+                if (startDate) redirectUrl += `&start_date=${startDate}`;
+                if (endDate) redirectUrl += `&end_date=${endDate}`;
+                window.location.href = redirectUrl;
                 return;
             }
             
-            // Show suggestions
             currentSuggestions = data.results || [];
             displaySuggestions(currentSuggestions);
             updateStats(data.stats);
@@ -561,8 +863,6 @@ function displaySuggestions(results) {
     
     suggestionsDiv.innerHTML = html;
     suggestionsDiv.style.display = 'block';
-    
-    // Show count
     searchCount.innerHTML = `<small>${results.length} found</small>`;
     searchCount.style.display = 'block';
 }
@@ -577,14 +877,22 @@ function highlightSuggestion(index) {
     }
 }
 
-// ==================== FILTER TABLE FUNCTIONS ====================
+function updateStats(stats) {
+    if (stats) {
+        document.getElementById('totalInStock').textContent = stats.total_in_stock || 0;
+        document.getElementById('totalSalesCount').textContent = stats.total_sales_count || 0;
+        document.getElementById('totalSalesAmount').textContent = `₦${(stats.total_sales_amount || 0).toFixed(2)}`;
+        document.getElementById('totalInventoryValue').textContent = `₦${(stats.total_inventory_value || 0).toFixed(2)}`;
+    }
+}
 
+// ========================================
+// FILTER TABLE FUNCTIONS
+// ========================================
 function filterByProduct(productId) {
-    // Hide suggestions
     document.getElementById('searchSuggestions').style.display = 'none';
     document.getElementById('searchCount').style.display = 'none';
     
-    // Get all rows
     const rows = document.querySelectorAll('#productTableBody tr[data-product-id]');
     
     rows.forEach(row => {
@@ -595,22 +903,12 @@ function filterByProduct(productId) {
         }
     });
     
-    // Show only one product
-    const totalRows = document.querySelectorAll('#productTableBody tr[data-product-id]').length;
-    const visibleRows = document.querySelectorAll('#productTableBody tr[data-product-id][style*="display: none"]').length;
-    
-    // Update result count
     document.getElementById('resultCount').textContent = `Found: 1 product`;
-    
-    // Show clear button
     showClearFilterButton();
-    
-    // Close suggestions
     selectedSuggestionIndex = -1;
 }
 
 function filterTableBySearch(searchTerm) {
-    // Get all rows
     const rows = document.querySelectorAll('#productTableBody tr[data-product-id]');
     let visibleCount = 0;
     
@@ -631,28 +929,19 @@ function filterTableBySearch(searchTerm) {
         }
     });
     
-    // Update result count
     document.getElementById('resultCount').textContent = `Found: ${visibleCount} products`;
-    
-    // Show clear button
     showClearFilterButton();
 }
 
 function resetToAllProducts() {
-    // Show all rows
     const rows = document.querySelectorAll('#productTableBody tr[data-product-id]');
     rows.forEach(row => {
         row.style.display = '';
     });
     
-    // Update result count
     const totalProducts = document.querySelectorAll('#productTableBody tr[data-product-id]').length;
     document.getElementById('resultCount').textContent = `Total: ${totalProducts} products`;
-    
-    // Hide clear button
     hideClearFilterButton();
-    
-    // Reset search input
     document.getElementById('productSearch').value = '';
 }
 
@@ -677,41 +966,160 @@ function hideClearFilterButton() {
     }
 }
 
-// ==================== UPDATE STATS ====================
-
-function updateStats(stats) {
-    if (stats) {
-        document.getElementById('totalInStock').textContent = stats.total_in_stock || 0;
-        document.getElementById('totalSalesCount').textContent = stats.total_sales_count || 0;
-        document.getElementById('totalSalesAmount').textContent = `₦${(stats.total_sales_amount || 0).toFixed(2)}`;
+// ========================================
+// OPEN EDIT MODAL
+// ========================================
+function openEditProductModal(productId) {
+    try {
+        const row = document.querySelector(`tr[data-product-id="${productId}"]`);
+        if (!row) {
+            showToast('Product not found', 'error');
+            return;
+        }
+        
+        const productData = {
+            id: row.dataset.productId || '',
+            name: row.dataset.name || '',
+            sku: row.dataset.sku || '',
+            categoryId: row.dataset.categoryId || '',
+            categoryName: row.dataset.categoryName || '',
+            supplierId: row.dataset.supplierId || '',
+            supplierName: row.dataset.supplierName || '',
+            description: row.dataset.description || '',
+            price: row.dataset.price || '0.00',
+            costPrice: row.dataset.costPrice || '0.00',
+            quantity: row.dataset.quantity || '0',
+            reorderLevel: row.dataset.reorderLevel || '10',
+            expiryDate: row.dataset.expiryDate || '',
+            manufacturingDate: row.dataset.manufacturingDate || '',
+            batchNumber: row.dataset.batchNumber || '',
+            location: row.dataset.location || '',
+            imageUrl: row.dataset.imageUrl || '',
+            branchId: row.dataset.branchId || '',
+            branchName: row.dataset.branchName || ''
+        };
+        
+        // SAFE SET VALUE HELPER
+        function setValue(id, value) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.value = value;
+            } else {
+                console.warn(`Element with id "${id}" not found`);
+            }
+        }
+        
+        setValue('editProductId', productData.id);
+        setValue('editProductName', productData.name);
+        setValue('editProductSKU', productData.sku);
+        setValue('editProductCategory', productData.categoryId);
+        setValue('editNewCategory', (productData.categoryName && !productData.categoryId) ? productData.categoryName : '');
+        setValue('editProductSupplier', productData.supplierId);
+        setValue('editNewSupplier', (productData.supplierName && !productData.supplierId) ? productData.supplierName : '');
+        setValue('editProductDescription', productData.description);
+        setValue('editProductPrice', productData.price);
+        setValue('editProductCostPrice', productData.costPrice);
+        setValue('editProductQuantity', productData.quantity);
+        setValue('editProductReorderLevel', productData.reorderLevel);
+        setValue('editProductExpiryDate', productData.expiryDate);
+        setValue('editProductManufacturingDate', productData.manufacturingDate);
+        setValue('editProductBatchNumber', productData.batchNumber);
+        setValue('editProductLocation', productData.location);
+        setValue('editProductBranch', productData.branchId);
+        
+        const isActiveCheckbox = document.getElementById('editProductIsActive');
+        if (isActiveCheckbox) {
+            isActiveCheckbox.checked = true;
+        }
+        
+        const imageContainer = document.getElementById('currentImageContainer');
+        const clearImageCheckbox = document.getElementById('editClearImage');
+        
+        if (imageContainer) {
+            if (productData.imageUrl) {
+                imageContainer.innerHTML = `<img src="${productData.imageUrl}" style="max-width: 120px; max-height: 120px; object-fit: cover; border-radius: 6px;">`;
+                imageContainer.style.border = '1px solid #ddd';
+                if (clearImageCheckbox) {
+                    clearImageCheckbox.disabled = false;
+                }
+            } else {
+                imageContainer.innerHTML = '<span style="color: #999;">No image</span>';
+                imageContainer.style.border = '1px dashed #ddd';
+                if (clearImageCheckbox) {
+                    clearImageCheckbox.disabled = true;
+                    clearImageCheckbox.checked = false;
+                }
+            }
+        }
+        
+        const modal = document.getElementById('editProductModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            const nameInput = document.getElementById('editProductName');
+            if (nameInput) {
+                nameInput.focus();
+            }
+        } else {
+            showToast('Modal not found', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error opening edit modal:', error);
+        showToast('Error loading product data: ' + error.message, 'error');
     }
 }
 
-
-// ==================== EDIT PRODUCT MODAL ====================
+// ========================================
+// CLOSE EDIT MODAL
+// ========================================
 function closeEditProductModal() {
-    document.getElementById('editProductModal').style.display = 'none';
-    document.getElementById('editProductForm').reset();
+    const modal = document.getElementById('editProductModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    
+    const form = document.getElementById('editProductForm');
+    if (form) {
+        form.reset();
+    }
+    
     const imageContainer = document.getElementById('currentImageContainer');
-    imageContainer.innerHTML = '<span>No image</span>';
-    imageContainer.style.border = '1px dashed #ddd';
-    document.getElementById('editClearImage').checked = false;
-    document.getElementById('editClearImage').disabled = true;
+    if (imageContainer) {
+        imageContainer.innerHTML = '<span style="color: #999;">No image</span>';
+        imageContainer.style.border = '1px dashed #ddd';
+    }
+    
+    const clearImage = document.getElementById('editClearImage');
+    if (clearImage) {
+        clearImage.checked = false;
+        clearImage.disabled = true;
+    }
+    
     const submitBtn = document.getElementById('editProductSubmitBtn');
-    submitBtn.disabled = false;
-    submitBtn.innerHTML = 'Save Changes';
-    submitBtn.style.background = '#10b981';
+    if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Save Changes';
+        submitBtn.style.background = '#10b981';
+    }
 }
 
+// ========================================
+// SUBMIT EDIT FORM
+// ========================================
 document.getElementById('editProductForm').addEventListener('submit', async function(e) {
     e.preventDefault();
+    
     const submitBtn = document.getElementById('editProductSubmitBtn');
     const formData = new FormData(this);
     const productId = formData.get('product_id');
     
+    if (!productId) {
+        showToast('Product ID is missing. Please reload the page.', 'error');
+        return;
+    }
+    
     const mfgDate = formData.get('manufacturing_date');
     const expDate = formData.get('expiry_date');
-    
     if (mfgDate && expDate && new Date(expDate) < new Date(mfgDate)) {
         showToast('Expiry date cannot be earlier than manufacturing date!', 'error');
         return;
@@ -733,34 +1141,80 @@ document.getElementById('editProductForm').addEventListener('submit', async func
         const result = await response.json();
         
         if (result.success) {
-            submitBtn.innerHTML = 'Saved!';
+            submitBtn.innerHTML = '✓ Saved!';
             submitBtn.style.background = '#059669';
             showToast('Product updated successfully!', 'success');
             
             const row = document.querySelector(`tr[data-product-id="${productId}"]`);
             if (row) {
-                const branchSelect = document.getElementById('editProductBranch');
-                const selectedBranchId = branchSelect.value;
-                const selectedBranchName = branchSelect.options[branchSelect.selectedIndex]?.text || '';
+                // Update data attributes
+                row.dataset.name = document.getElementById('editProductName').value;
+                row.dataset.categoryId = document.getElementById('editProductCategory').value;
+                row.dataset.supplierId = document.getElementById('editProductSupplier').value;
+                row.dataset.description = document.getElementById('editProductDescription').value;
+                row.dataset.price = document.getElementById('editProductPrice').value;
+                row.dataset.costPrice = document.getElementById('editProductCostPrice').value;
+                row.dataset.quantity = document.getElementById('editProductQuantity').value;
+                row.dataset.reorderLevel = document.getElementById('editProductReorderLevel').value;
+                row.dataset.expiryDate = document.getElementById('editProductExpiryDate').value;
+                row.dataset.manufacturingDate = document.getElementById('editProductManufacturingDate').value;
+                row.dataset.batchNumber = document.getElementById('editProductBatchNumber').value;
+                row.dataset.location = document.getElementById('editProductLocation').value;
+                row.dataset.branchId = document.getElementById('editProductBranch').value;
                 
-                row.dataset.branchId = selectedBranchId;
-                row.dataset.branchName = selectedBranchName;
+                // Update visible cells
+                const cells = row.querySelectorAll('td');
+                cells[1].innerHTML = `<strong>${document.getElementById('editProductName').value}</strong>`;
                 
-                const branchCell = row.querySelector('td:nth-last-child(2)');
-                if (branchCell) {
-                    if (selectedBranchId) {
-                        branchCell.innerHTML = `<span class="badge badge-info">${selectedBranchName}</span>`;
-                    } else {
-                        branchCell.innerHTML = `<span class="badge badge-secondary">No Branch</span>`;
-                    }
+                const categorySelect = document.getElementById('editProductCategory');
+                const newCategory = document.getElementById('editNewCategory').value.trim();
+                if (newCategory) {
+                    cells[3].textContent = newCategory;
+                } else if (categorySelect.value) {
+                    cells[3].textContent = categorySelect.options[categorySelect.selectedIndex].text;
+                } else {
+                    cells[3].textContent = 'N/A';
                 }
                 
-                setTimeout(() => {
-                    closeEditProductModal();
-                }, 500);
-            } else {
-                location.reload();
+                const supplierSelect = document.getElementById('editProductSupplier');
+                const newSupplier = document.getElementById('editNewSupplier').value.trim();
+                if (newSupplier) {
+                    cells[4].textContent = newSupplier;
+                } else if (supplierSelect.value) {
+                    cells[4].textContent = supplierSelect.options[supplierSelect.selectedIndex].text;
+                } else {
+                    cells[4].textContent = 'N/A';
+                }
+                
+                cells[5].textContent = `₦${parseFloat(document.getElementById('editProductPrice').value).toFixed(2)}`;
+                cells[6].textContent = document.getElementById('editProductQuantity').value;
+                
+                const qty = parseInt(document.getElementById('editProductQuantity').value);
+                const reorder = parseInt(document.getElementById('editProductReorderLevel').value) || 10;
+                let statusHtml = '';
+                if (qty === 0) {
+                    statusHtml = '<span class="badge badge-danger">Out of Stock</span>';
+                } else if (qty <= reorder) {
+                    statusHtml = '<span class="badge badge-warning">Low Stock</span>';
+                } else {
+                    statusHtml = '<span class="badge badge-success">In Stock</span>';
+                }
+                cells[7].innerHTML = statusHtml;
+                
+                if (cells.length > 8) {
+                    const branchSelect = document.getElementById('editProductBranch');
+                    if (branchSelect.value) {
+                        const branchName = branchSelect.options[branchSelect.selectedIndex].text;
+                        cells[8].innerHTML = `<span class="badge badge-info">${branchName}</span>`;
+                    } else {
+                        cells[8].innerHTML = `<span class="badge badge-secondary">No Branch</span>`;
+                    }
+                }
             }
+            
+            setTimeout(() => {
+                closeEditProductModal();
+            }, 800);
             
         } else {
             showToast(result.error || 'Error updating product', 'error');
@@ -768,6 +1222,7 @@ document.getElementById('editProductForm').addEventListener('submit', async func
             submitBtn.innerHTML = 'Save Changes';
             submitBtn.style.background = '#10b981';
         }
+        
     } catch (error) {
         console.error('Network error:', error);
         showToast('Network error. Please try again.', 'error');
@@ -777,122 +1232,83 @@ document.getElementById('editProductForm').addEventListener('submit', async func
     }
 });
 
-// ==================== DELETE PRODUCT ====================
+// ========================================
+// DELETE PRODUCT
+// ========================================
 function deleteProduct(productId, productName) {
-    showConfirmModal(
-        'Delete Product',
-        `Are you sure you want to delete "${productName}"? This action cannot be undone.`,
-        async function() {
-            try {
-                const response = await fetch(`/products/delete/${productId}/`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': getCookie('csrftoken'),
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-                
-                if (response.ok) {
-                    showToast('Product deleted successfully!', 'success');
-                    setTimeout(() => location.reload(), 1500);
-                } else {
-                    const data = await response.json();
-                    showToast(data.error || 'Failed to delete product', 'error');
-                }
-            } catch (error) {
-                console.error('Delete error:', error);
-                showToast('Network error. Please try again.', 'error');
+    if (confirm(`Are you sure you want to delete "${productName}"? This action cannot be undone.`)) {
+        fetch(`/products/delete/${productId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'X-Requested-With': 'XMLHttpRequest'
             }
-        }
-    );
+        })
+        .then(response => {
+            if (response.ok) {
+                showToast('Product deleted successfully!', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                response.json().then(data => {
+                    showToast(data.error || 'Failed to delete product', 'error');
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Delete error:', error);
+            showToast('Network error. Please try again.', 'error');
+        });
+    }
 }
 
-// ==================== UTILITY FUNCTIONS ====================
+// ========================================
+// UTILITY FUNCTIONS
+// ========================================
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
 
 function showToast(message, type = 'success') {
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     toast.textContent = message;
     document.body.appendChild(toast);
-    setTimeout(() => { toast.remove(); }, 3000);
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
 }
 
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-function showConfirmModal(title, message, onConfirm) {
-    const modal = document.getElementById('globalModal');
-    document.getElementById('modalTitle').textContent = title;
-    document.getElementById('modalContent').innerHTML = `<p>${message}</p>`;
-    document.getElementById('modalButtons').innerHTML = `
-        <button id="confirmYes" class="btn btn-success" style="flex:1">Yes</button>
-        <button onclick="closeGlobalModal()" class="btn btn-danger" style="flex:1">Cancel</button>
-    `;
-    modal.style.display = 'flex';
-    document.getElementById('confirmYes').onclick = () => { closeGlobalModal(); onConfirm(); };
-}
-
-function closeGlobalModal() {
-    document.getElementById('globalModal').style.display = 'none';
-}
-
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-
-document.getElementById('editProductCategory').addEventListener('change', function() {
-    if (this.value) {
-        document.getElementById('editNewCategory').value = '';
+// ========================================
+// CLOSE SUGGESTIONS ON OUTSIDE CLICK
+// ========================================
+document.addEventListener('click', function(e) {
+    const searchContainer = document.querySelector('.search-container');
+    if (!searchContainer.contains(e.target)) {
+        document.getElementById('searchSuggestions').style.display = 'none';
+        document.getElementById('searchCount').style.display = 'none';
+        selectedSuggestionIndex = -1;
     }
 });
 
-document.getElementById('editNewCategory').addEventListener('input', function() {
-    if (this.value) {
-        document.getElementById('editProductCategory').value = '';
-    }
-});
-
-document.getElementById('editProductSupplier').addEventListener('change', function() {
-    if (this.value) {
-        document.getElementById('editNewSupplier').value = '';
-    }
-});
-
-document.getElementById('editNewSupplier').addEventListener('input', function() {
-    if (this.value) {
-        document.getElementById('editProductSupplier').value = '';
-    }
-});
-
-// Initialize on page load
+// ========================================
+// INITIALIZE ON PAGE LOAD
+// ========================================
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('productSearch');
     if (searchInput) {
         searchInput.focus();
         
-        // If there's a search query from URL, apply it
         const urlParams = new URLSearchParams(window.location.search);
         const searchParam = urlParams.get('search');
         if (searchParam) {

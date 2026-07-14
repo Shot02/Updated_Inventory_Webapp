@@ -17,6 +17,8 @@ from sales.models import SavedCart, PendingCart, Sale, Payment, StockMovement
 # Refund imports
 from refunds.models import RefundRequest, Refund
 
+from .forms import StaffRegistrationForm
+
 @login_required
 def register_staff(request):
     if not (request.user.role == 'admin' or request.user.is_superuser):
@@ -27,50 +29,31 @@ def register_staff(request):
     
     if request.method == 'POST':
         try:
-            username = request.POST.get('username')
-            email = request.POST.get('email')
-            first_name = request.POST.get('first_name')
-            last_name = request.POST.get('last_name')
-            password = request.POST.get('password')
-            role = request.POST.get('role', 'staff')
-            phone = request.POST.get('phone', '')
-            branch_id = request.POST.get('branch')
-            
-            if not username or not email or not password:
-                messages.error(request, 'Username, email and password are required')
-                return redirect('register_staff')
-            
-            if User.objects.filter(username=username).exists():
-                messages.error(request, 'Username already exists')
-                return redirect('register_staff')
-            
-            branch = None
-            if branch_id:
-                try:
-                    branch = Branch.objects.get(id=branch_id, is_active=True)
-                except Branch.DoesNotExist:
-                    messages.error(request, 'Selected branch does not exist')
-                    return redirect('register_staff')
-            
-            user = User.objects.create_user(
-                username=username,
-                email=email,
-                password=password,
-                first_name=first_name,
-                last_name=last_name,
-                role=role,
-                phone=phone,
-                is_staff=True,
-                branch=branch
-            )
-            
-            messages.success(request, f'Staff member "{username}" created successfully! Branch: {branch.name if branch else "Not assigned"}')
-            return redirect('staff_list')
-            
+            # --- FIX: Use the form for validation ---
+            form = StaffRegistrationForm(request.POST)
+            if form.is_valid():
+                user = form.save(commit=False)
+                user.is_staff = True
+                user.save()
+                messages.success(request, f'Staff member "{user.username}" created successfully!')
+                return redirect('staff_list')
+            else:
+                # Show form errors
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        messages.error(request, f'{field}: {error}')
         except Exception as e:
             messages.error(request, f'Error creating staff: {str(e)}')
     
-    context = {'branches': branches}
+    else:
+        # --- FIX: Initialize empty form for GET request ---
+        form = StaffRegistrationForm()
+    
+    # --- FIX: Pass BOTH form and branches to template ---
+    context = {
+        'form': form,  # <--- This is required for the dropdown to work
+        'branches': branches,
+    }
     return render(request, 'staff/register_staff.html', context)
 
 @login_required

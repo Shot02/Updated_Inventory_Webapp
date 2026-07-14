@@ -503,6 +503,8 @@ let searchTimeout;
 let paymentCounter = 1;
 let currentSearchResults = [];
 let selectedSearchIndex = -1;
+let isProcessing = false;
+
 
 // ========== INITIALIZATION ==========
 document.addEventListener('DOMContentLoaded', function() {
@@ -1055,20 +1057,29 @@ async function saveCart() {
 
 // ========== PROCESS SALE FUNCTION ==========
 async function processSale() {
+    // 1. PREVENT MULTIPLE CLICKS
+    if (isProcessing) {
+        showToast('Sale is already processing. Please wait...', 'warning');
+        return;
+    }
+
+    // 2. CART VALIDATION
     if (cart.length === 0) {
         showModal('Empty Cart', 'Please add items to cart before processing sale.', 'warning');
         return;
     }
-    
+
+    // 3. GET CUSTOMER & PAYMENT DATA
     const customerName = document.getElementById('customerName').value.trim();
     const customerPhone = document.getElementById('customerPhone').value.trim();
     const paymentType = document.querySelector('.payment-type-option.active').textContent.trim().toLowerCase().includes('full') ? 'full' : 'installment';
     const grandTotal = calculateGrandTotal();
-    
+
+    // 4. GET PAYMENT METHODS
     const paymentEntries = document.querySelectorAll('.payment-entry');
     const payments = [];
     let totalPaid = 0;
-    
+
     paymentEntries.forEach(entry => {
         const method = entry.querySelector('.payment-method-select').value;
         const amount = parseFloat(entry.querySelector('.payment-amount-input').value) || 0;
@@ -1080,23 +1091,45 @@ async function processSale() {
             totalPaid += amount;
         }
     });
-    
+
+    // 5. PAYMENT VALIDATION
     if (paymentType === 'installment') {
+        if (!customerPhone) {
+            showModal('Phone Number Required', 
+                'For installment payments, a phone number is required to identify the debtor.', 
+                'error');
+            document.getElementById('customerPhone').focus();
+            return;
+        }
+
         if (totalPaid >= grandTotal) {
             showModal('Invalid Payment', 'For installment payments, total paid must be less than grand total.', 'error');
             return;
         }
-        if (customerPhone.length === 0) {
-            showModal('Invalid Payment', 'For installment payments, customer must have a phone number.', 'error');
-            return;
-        }
     } else {
+        // Full payment validation
         if (totalPaid < grandTotal) {
             showModal('Incomplete Payment', 'For full payment, total paid must equal the grand total.', 'error');
             return;
         }
     }
-    
+
+    // 6. SET PROCESSING STATE (Disable button)
+    isProcessing = true;
+    const processBtn = document.querySelector('.btn-success');
+    processBtn.disabled = true;
+    processBtn.innerHTML = '<span class="spinner"></span> Processing...';
+
+    // 7. PREPARE ITEMS FOR BACKEND
+    const items = cart.map(item => ({
+        product_id: item.product_id,
+        quantity: item.quantity,
+        price: item.price,
+        discount: item.discount || 0,
+        total: (item.price * item.quantity) - (item.discount || 0)
+    }));
+
+    // 8. GET SAVED CART ID (if any)
     let savedCartId = null;
     try {
         const cartToLoad = sessionStorage.getItem('cartToLoad');
@@ -1107,16 +1140,12 @@ async function processSale() {
     } catch (e) {
         console.error('Error parsing saved cart data:', e);
     }
-    
-    const items = cart.map(item => ({
-        product_id: item.product_id,
-        quantity: item.quantity,
-        price: item.price,
-        discount: item.discount || 0,
-        total: (item.price * item.quantity) - (item.discount || 0)
-    }));
-    
+
+    // 9. SEND REQUEST TO SERVER
     try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
         const response = await fetch('/sales/api/process-sale/', {
             method: 'POST',
             headers: {
@@ -1126,25 +1155,30 @@ async function processSale() {
             body: JSON.stringify({
                 items: items,
                 customer_name: customerName,
-                customer_phone: customerPhone,
+                customer_phone: customerPhone, // Now required for installment
                 amount_paid: totalPaid,
                 payment_method: payments[0]?.method || 'cash',
                 payment_type: paymentType,
                 discount: calculateTotalDiscount(),
                 saved_cart_id: savedCartId,
                 payments: payments
-            })
+            }),
+            signal: controller.signal
         });
-        
+
+        clearTimeout(timeoutId);
         const result = await response.json();
-        
+
+        // 10. HANDLE SUCCESS
         if (result.success) {
+            // Clear cart
             cart = [];
             updateCart();
             sessionStorage.removeItem('cartToLoad');
             document.getElementById('customerName').value = '';
             document.getElementById('customerPhone').value = '';
-            
+
+            // Reset payment methods
             const paymentList = document.getElementById('paymentMethodsList');
             paymentList.innerHTML = `
                 <div class="payment-entry" data-payment-id="1">
@@ -1161,15 +1195,42 @@ async function processSale() {
             `;
             updatePaymentTotal();
             selectPaymentType('full');
-            
-            window.location.href = `/sales/receipt/${result.sale_id}/`;
+
+            // Show success and redirect to receipt
+            showToast('Sale completed successfully!', 'success');
+            setTimeout(() => {
+                window.location.href = `/sales/receipt/${result.sale_id}/`;
+            }, 1000);
+
         } else {
+            // Handle server error
             showModal('Error', result.error || 'Failed to process sale', 'error');
+            resetProcessingState(processBtn);
         }
+
     } catch (error) {
+        // 11. HANDLE NETWORK/TIMEOUT ERRORS
         console.error('Process sale error:', error);
-        showModal('Network Error', 'Error processing sale. Please check your connection and try again.', 'error');
+        
+        if (error.name === 'AbortError') {
+            showModal('Timeout Error', 'The request took too long. Please try again.', 'error');
+        } else {
+            showModal('Network Error', 'Error processing sale. Please check your connection and try again.', 'error');
+        }
+        
+        resetProcessingState(processBtn);
     }
+}
+
+// =============================================
+// HELPER FUNCTION: RESET BUTTON STATE
+// =============================================
+function resetProcessingState(button) {
+    if (button) {
+        button.disabled = false;
+        button.innerHTML = 'Complete Sale';
+    }
+    isProcessing = false;
 }
 
 // ========== LOAD CART DATA FUNCTION ==========
